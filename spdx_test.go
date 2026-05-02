@@ -1,6 +1,10 @@
 package sbom
 
-import "testing"
+import (
+	"errors"
+	"strings"
+	"testing"
+)
 
 func TestSPDXExternalRefPURL(t *testing.T) {
 	in := `{
@@ -67,5 +71,32 @@ func TestSPDXInTotoEnvelope(t *testing.T) {
 	}
 	if len(doc.Packages) != 1 || doc.Packages[0].Name != "x" {
 		t.Errorf("predicate unwrap failed: %+v", doc.Packages)
+	}
+}
+
+func TestSPDXGitHubEnvelope(t *testing.T) {
+	inner := `{"spdxVersion":"SPDX-2.3","SPDXID":"SPDXRef-DOCUMENT",
+	  "packages":[{"SPDXID":"SPDXRef-p","name":"x"}]}`
+	for _, depth := range []int{1, 2} {
+		in := inner
+		for range depth {
+			in = `{"sbom":` + in + `}`
+		}
+		doc, err := Parse([]byte(in))
+		if err != nil {
+			t.Fatalf("depth %d: Parse: %v", depth, err)
+		}
+		if len(doc.Packages) != 1 || doc.Packages[0].Name != "x" {
+			t.Errorf("depth %d: sbom unwrap failed: %+v", depth, doc.Packages)
+		}
+	}
+}
+
+func TestSPDXEnvelopeDepthLimit(t *testing.T) {
+	const depth = 100
+	in := strings.Repeat(`{"sbom":`, depth) + `{}` + strings.Repeat(`}`, depth)
+	_, err := Parse([]byte(in))
+	if !errors.Is(err, ErrUnrecognized) {
+		t.Fatalf("Parse = %v, want ErrUnrecognized", err)
 	}
 }

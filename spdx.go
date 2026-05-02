@@ -63,16 +63,24 @@ type spdxRelationship struct {
 	RelatedSPDXElement string `json:"relatedSpdxElement"`
 }
 
+const maxEnvelopeDepth = 3
+
 func parseSPDX(data []byte) (*SBOM, error) {
 	var doc spdxDoc
-	if err := json.Unmarshal(data, &doc); err != nil {
-		return nil, wrapErr("spdx json", err)
-	}
-	if len(doc.SBOM) > 0 {
-		return parseSPDX(doc.SBOM)
-	}
-	if strings.Contains(doc.PredicateType, "spdx") && len(doc.Predicate) > 0 {
-		return parseSPDX(doc.Predicate)
+	for range maxEnvelopeDepth {
+		doc = spdxDoc{}
+		if err := json.Unmarshal(data, &doc); err != nil {
+			return nil, wrapErr("spdx json", err)
+		}
+		if len(doc.SBOM) > 0 {
+			data = doc.SBOM
+			continue
+		}
+		if strings.Contains(doc.PredicateType, "spdx") && len(doc.Predicate) > 0 {
+			data = doc.Predicate
+			continue
+		}
+		break
 	}
 	if doc.SPDXVersion == "" && doc.SPDXID == "" {
 		return nil, ErrUnrecognized
