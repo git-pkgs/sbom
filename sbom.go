@@ -169,6 +169,32 @@ func newSBOM(t Type) *SBOM { return New(t) }
 // (Name, Version) pair.
 func (s *SBOM) AddPackage(p Package) { s.addPackage(p) }
 
+// FilterProperties walks every package and removes properties whose
+// names keep returns false for. Useful when handing a document to a
+// downstream consumer that doesn't recognise a particular property
+// namespace — for example, strip a tool-specific "mytool:" prefix
+// before sharing outside the team that produced it. The filter
+// mutates the SBOM in place; callers wanting a copy should Encode
+// + Parse around the call.
+//
+// Document- and Component-level metadata is untouched; only the
+// per-package Properties slice is filtered.
+func (s *SBOM) FilterProperties(keep func(name string) bool) {
+	if keep == nil {
+		return
+	}
+	for i := range s.Packages {
+		props := s.Packages[i].Properties
+		filtered := props[:0]
+		for _, p := range props {
+			if keep(p.Name) {
+				filtered = append(filtered, p)
+			}
+		}
+		s.Packages[i].Properties = filtered
+	}
+}
+
 func (s *SBOM) addPackage(p Package) {
 	if s.pkgIndex == nil {
 		s.pkgIndex = map[[2]string]int{}
