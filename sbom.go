@@ -230,15 +230,23 @@ func (s *SBOM) ClassifyScope() map[string]string {
 			roots[r.TargetID] = true
 		}
 	}
+	if len(sources) == 0 && len(roots) == 0 {
+		// No DEPENDS_ON or DESCRIBES edges: a flat-list SBOM. nil (as
+		// distinct from empty) lets callers hide scope entirely.
+		return nil
+	}
 	for id := range sources {
 		if !targets[id] {
 			roots[id] = true
 		}
 	}
-	if len(roots) == 0 {
-		return nil
-	}
 	out := map[string]string{}
+	if len(roots) == 0 {
+		// Edges exist but form a cycle with no DESCRIBES root: nothing
+		// is classifiable, but the graph is present, so return empty
+		// rather than nil.
+		return out
+	}
 	for _, r := range s.Relationships {
 		if r.Type != RelDependsOn {
 			continue

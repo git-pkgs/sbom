@@ -61,6 +61,32 @@ func TestClassifyScope(t *testing.T) {
 			t.Errorf("expected nil for empty relationships, got %v", got)
 		}
 	})
+	t.Run("cycle with no root", func(t *testing.T) {
+		// a -> b -> a with no DESCRIBES: every node has an inbound edge so
+		// no root can be inferred. The graph exists, so the result is an
+		// empty map rather than nil.
+		s := &SBOM{Relationships: []Relationship{
+			{SourceID: "a", TargetID: "b", Type: RelDependsOn},
+			{SourceID: "b", TargetID: "a", Type: RelDependsOn},
+		}}
+		got := s.ClassifyScope()
+		if got == nil {
+			t.Fatal("expected non-nil map for cycle-only graph")
+		}
+		if len(got) != 0 {
+			t.Errorf("expected empty map, got %v", got)
+		}
+	})
+	t.Run("unrelated relationship types", func(t *testing.T) {
+		// CONTAINS/other edges are ignored; with no DEPENDS_ON or DESCRIBES
+		// this is still the flat-list case.
+		s := &SBOM{Relationships: []Relationship{
+			{SourceID: "a", TargetID: "b", Type: "CONTAINS"},
+		}}
+		if got := s.ClassifyScope(); got != nil {
+			t.Errorf("expected nil, got %v", got)
+		}
+	})
 	t.Run("only DESCRIBES", func(t *testing.T) {
 		// A DESCRIBES edge with no DEPENDS_ON edges: roots exist but no
 		// packages are classified; the map is empty (not nil).
