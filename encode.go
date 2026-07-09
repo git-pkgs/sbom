@@ -123,7 +123,7 @@ func buildSPDX(s *SBOM) *spdxDoc {
 		sp := packageToSPDX(&s.Packages[i], i)
 		doc.Packages = append(doc.Packages, sp)
 		doc.Relationships = append(doc.Relationships, spdxRelationship{
-			SPDXElementID: spdxRootPkgID, RelationshipType: "DEPENDS_ON",
+			SPDXElementID: spdxRootPkgID, RelationshipType: RelDependsOn,
 			RelatedSPDXElement: sp.SPDXID,
 		})
 	}

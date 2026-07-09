@@ -136,7 +136,7 @@ func parseCycloneDX(data []byte) (*SBOM, error) {
 	for _, d := range bom.Dependencies {
 		for _, t := range d.DependsOn {
 			s.Relationships = append(s.Relationships, Relationship{
-				SourceID: d.Ref, TargetID: t, Type: "DEPENDS_ON",
+				SourceID: d.Ref, TargetID: t, Type: RelDependsOn,
 			})
 		}
 	}
@@ -155,7 +155,7 @@ func cdxWalkComponents(s *SBOM, comps []cdxComponent, parent string) {
 		}
 		if parent != "" {
 			s.Relationships = append(s.Relationships, Relationship{
-				SourceID: parent, TargetID: ref, Type: "DEPENDS_ON",
+				SourceID: parent, TargetID: ref, Type: RelDependsOn,
 			})
 		}
 		if len(c.Components) > 0 {

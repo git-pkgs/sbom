@@ -60,6 +60,25 @@ sbom.Encode(os.Stdout, s, sbom.FormatCycloneDXJSON)
 sbom.Encode(os.Stdout, s, sbom.FormatSPDXJSON)
 ```
 
+## Relationships
+
+Both parsers normalise dependency edges to `sbom.RelDependsOn` and SPDX's document-to-root link to `sbom.RelDescribes`. `ClassifyScope` walks that graph to tag each package as a direct or transitive dependency of the document's root:
+
+```go
+doc, _ := sbom.Parse(data)
+scope := doc.ClassifyScope()
+for _, p := range doc.Packages {
+    switch scope[p.ID] {
+    case sbom.ScopeDirect:
+    case sbom.ScopeTransitive:
+    default:
+        // root, or a flat-list SBOM with no dependency graph
+    }
+}
+```
+
+`ClassifyScope` returns `nil` when the document has no dependency graph at all, so callers can hide a scope filter rather than showing every package as unclassified.
+
 ## Supported formats
 
 | Format | Parse | Encode | Notes |
