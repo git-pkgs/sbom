@@ -133,6 +133,20 @@ func (p *Package) CPE() string {
 	return ""
 }
 
+// Relationship type values. SPDX has ~40 of these; we name the two the
+// parsers emit and ClassifyScope reads. CycloneDX dependency edges are
+// normalised to RelDependsOn.
+const (
+	RelDependsOn = "DEPENDS_ON"
+	RelDescribes = "DESCRIBES"
+)
+
+// Scope values returned by ClassifyScope.
+const (
+	ScopeDirect     = "direct"
+	ScopeTransitive = "transitive"
+)
+
 // Relationship links two elements in the SBOM. SourceID/TargetID are the
 // raw identifiers from the document; Source/Target are resolved names
 // where the parser could determine them.
@@ -193,6 +207,57 @@ func (s *SBOM) FilterProperties(keep func(name string) bool) {
 		}
 		s.Packages[i].Properties = filtered
 	}
+}
+
+// ClassifyScope derives direct-vs-transitive scope for each package from
+// the relationship graph. Roots are nodes that originate DEPENDS_ON edges
+// but are never themselves a DEPENDS_ON target, plus anything a DESCRIBES
+// edge points at (SPDX's document-to-root-package link). A package is
+// ScopeDirect if a root depends on it, ScopeTransitive if only a non-root
+// does, and absent from the map if the graph doesn't mention it at all.
+// Returns nil for a flat-list SBOM with no dependency graph so callers can
+// tell "no graph" apart from "graph present but this package is a root".
+func (s *SBOM) ClassifyScope() map[string]string {
+	targets := map[string]bool{}
+	sources := map[string]bool{}
+	roots := map[string]bool{}
+	for _, r := range s.Relationships {
+		switch r.Type {
+		case RelDependsOn:
+			sources[r.SourceID] = true
+			targets[r.TargetID] = true
+		case RelDescribes:
+			roots[r.TargetID] = true
+		}
+	}
+	if len(sources) == 0 && len(roots) == 0 {
+		// No DEPENDS_ON or DESCRIBES edges: a flat-list SBOM. nil (as
+		// distinct from empty) lets callers hide scope entirely.
+		return nil
+	}
+	for id := range sources {
+		if !targets[id] {
+			roots[id] = true
+		}
+	}
+	out := map[string]string{}
+	if len(roots) == 0 {
+		// Edges exist but form a cycle with no DESCRIBES root: nothing
+		// is classifiable, but the graph is present, so return empty
+		// rather than nil.
+		return out
+	}
+	for _, r := range s.Relationships {
+		if r.Type != RelDependsOn {
+			continue
+		}
+		if roots[r.SourceID] {
+			out[r.TargetID] = ScopeDirect
+		} else if out[r.TargetID] == "" {
+			out[r.TargetID] = ScopeTransitive
+		}
+	}
+	return out
 }
 
 func (s *SBOM) addPackage(p Package) {
