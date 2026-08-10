@@ -62,9 +62,20 @@ type Creator struct {
 // Component is the root subject the SBOM describes (CycloneDX
 // metadata.component / SPDX root package).
 type Component struct {
-	Type    string
-	Name    string
-	Version string
+	Type              string
+	Name              string
+	Version           string
+	LicenseExpression string
+	LicenseNames      []string
+	ExtractedLicenses []ExtractedLicense
+}
+
+// ExtractedLicense is non-SPDX license text associated with a component.
+// ID is optional; Encode generates a stable LicenseRef when it is empty.
+type ExtractedLicense struct {
+	ID   string
+	Name string
+	Text string
 }
 
 // ExternalRef is a typed pointer to an external resource. PURLs and CPEs
