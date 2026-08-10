@@ -13,23 +13,165 @@ const (
 )
 
 type cdxBOM struct {
-	XMLName      xml.Name        `json:"-"             xml:"bom"`
-	XMLNS        string          `json:"-"             xml:"xmlns,attr"`
-	BOMFormat    string          `json:"bomFormat"     xml:"-"`
-	SpecVersion  string          `json:"specVersion"   xml:"-"`
-	BOMVersion   int             `json:"version"       xml:"version,attr"`
-	SerialNumber string          `json:"serialNumber,omitempty" xml:"serialNumber,attr,omitempty"`
-	Metadata     *cdxMetadata    `json:"metadata,omitempty"     xml:"metadata,omitempty"`
-	Components   []cdxComponent  `json:"components"    xml:"components>component"`
-	Dependencies []cdxDependency `json:"dependencies,omitempty" xml:"dependencies>dependency,omitempty"`
+	BOMFormat    string          `json:"bomFormat"`
+	SpecVersion  string          `json:"specVersion"`
+	BOMVersion   int             `json:"version"`
+	SerialNumber string          `json:"serialNumber,omitempty"`
+	Metadata     *cdxMetadata    `json:"metadata,omitempty"`
+	Components   []cdxComponent  `json:"components,omitempty"`
+	Dependencies []cdxDependency `json:"dependencies,omitempty"`
+}
+
+type cdxBOMXML struct {
+	XMLName      xml.Name            `xml:"bom"`
+	XMLNS        string              `xml:"xmlns,attr"`
+	Version      int                 `xml:"version,attr"`
+	SerialNumber string              `xml:"serialNumber,attr,omitempty"`
+	Metadata     *cdxMetadataXML     `xml:"metadata,omitempty"`
+	Components   *cdxComponentsXML   `xml:"components,omitempty"`
+	Dependencies *cdxDependenciesXML `xml:"dependencies,omitempty"`
+}
+
+type cdxMetadataXML struct {
+	Timestamp string           `xml:"timestamp,omitempty"`
+	Tools     *cdxToolsXML     `xml:"tools,omitempty"`
+	Component *cdxComponentXML `xml:"component,omitempty"`
+	Supplier  *cdxOrgEntity    `xml:"supplier,omitempty"`
+}
+
+type cdxToolsXML struct {
+	Tools []cdxTool `xml:"tool"`
+}
+
+type cdxComponentsXML struct {
+	Components []cdxComponentXML `xml:"component"`
+}
+
+type cdxDependenciesXML struct {
+	Dependencies []cdxDependency `xml:"dependency"`
+}
+
+type cdxComponentXML struct {
+	BOMRef             string                    `xml:"bom-ref,attr,omitempty"`
+	Type               string                    `xml:"type,attr"`
+	Name               string                    `xml:"name"`
+	Version            string                    `xml:"version,omitempty"`
+	Description        string                    `xml:"description,omitempty"`
+	Copyright          string                    `xml:"copyright,omitempty"`
+	Author             string                    `xml:"author,omitempty"`
+	PURL               string                    `xml:"purl,omitempty"`
+	Supplier           *cdxOrgEntity             `xml:"supplier,omitempty"`
+	Hashes             *cdxHashesXML             `xml:"hashes,omitempty"`
+	Licenses           *cdxLicensesXML           `xml:"licenses,omitempty"`
+	ExternalReferences *cdxExternalReferencesXML `xml:"externalReferences,omitempty"`
+	Properties         *cdxPropertiesXML         `xml:"properties,omitempty"`
+	Components         *cdxComponentsXML         `xml:"components,omitempty"`
+}
+
+type cdxHashesXML struct {
+	Hashes []cdxHash `xml:"hash"`
+}
+
+type cdxLicensesXML struct {
+	Licenses   []cdxLicense `xml:"license,omitempty"`
+	Expression string       `xml:"expression,omitempty"`
+}
+
+type cdxExternalReferencesXML struct {
+	References []cdxExtRef `xml:"reference"`
+}
+
+type cdxPropertiesXML struct {
+	Properties []cdxProperty `xml:"property"`
+}
+
+func cycloneDXXML(bom *cdxBOM) cdxBOMXML {
+	result := cdxBOMXML{
+		XMLNS: cdxXMLNS, Version: bom.BOMVersion, SerialNumber: bom.SerialNumber,
+	}
+	if bom.Metadata != nil {
+		result.Metadata = &cdxMetadataXML{
+			Timestamp: bom.Metadata.Timestamp,
+			Component: cdxComponentToXMLPtr(bom.Metadata.Component),
+			Supplier:  bom.Metadata.Supplier,
+		}
+		if len(bom.Metadata.Tools) > 0 {
+			result.Metadata.Tools = &cdxToolsXML{Tools: bom.Metadata.Tools}
+		}
+	}
+	if len(bom.Components) > 0 {
+		result.Components = componentsToXML(bom.Components)
+	}
+	if len(bom.Dependencies) > 0 {
+		result.Dependencies = &cdxDependenciesXML{Dependencies: bom.Dependencies}
+	}
+	return result
+}
+
+func componentsToXML(components []cdxComponent) *cdxComponentsXML {
+	result := &cdxComponentsXML{Components: make([]cdxComponentXML, 0, len(components))}
+	for i := range components {
+		result.Components = append(result.Components, cdxComponentToXML(&components[i]))
+	}
+	return result
+}
+
+func cdxComponentToXMLPtr(component *cdxComponent) *cdxComponentXML {
+	if component == nil {
+		return nil
+	}
+	result := cdxComponentToXML(component)
+	return &result
+}
+
+func cdxComponentToXML(component *cdxComponent) cdxComponentXML {
+	result := cdxComponentXML{
+		BOMRef: component.BOMRef, Type: component.Type, Name: component.Name,
+		Version: component.Version, Description: component.Description,
+		Copyright: component.Copyright, Author: component.Author, PURL: component.PURL,
+		Supplier: component.Supplier,
+	}
+	if len(component.Hashes) > 0 {
+		result.Hashes = &cdxHashesXML{Hashes: component.Hashes}
+	}
+	if len(component.Licenses) > 0 {
+		result.Licenses = licensesToXML(component.Licenses)
+	}
+	if len(component.ExternalReferences) > 0 {
+		result.ExternalReferences = &cdxExternalReferencesXML{References: component.ExternalReferences}
+	}
+	if len(component.Properties) > 0 {
+		result.Properties = &cdxPropertiesXML{Properties: component.Properties}
+	}
+	if len(component.Components) > 0 {
+		result.Components = componentsToXML(component.Components)
+	}
+	return result
+}
+
+func licensesToXML(licenses []cdxLicense) *cdxLicensesXML {
+	result := &cdxLicensesXML{}
+	if len(licenses) == 1 && licenses[0].Expression != "" {
+		result.Expression = licenses[0].Expression
+		return result
+	}
+	result.Licenses = make([]cdxLicense, 0, len(licenses))
+	for _, license := range licenses {
+		if license.License != nil {
+			license.ID = license.License.ID
+			license.Name = license.License.Name
+		}
+		result.Licenses = append(result.Licenses, license)
+	}
+	return result
 }
 
 type cdxMetadata struct {
-	Timestamp   string        `json:"timestamp,omitempty"   xml:"timestamp,omitempty"`
-	Tools       []cdxTool     `json:"-"                     xml:"tools>tool,omitempty"`
-	Component   *cdxComponent `json:"component,omitempty"   xml:"component,omitempty"`
-	Supplier    *cdxOrgEntity `json:"supplier,omitempty"    xml:"supplier,omitempty"`
-	Manufacture *cdxOrgEntity `json:"manufacture,omitempty" xml:"-"`
+	Timestamp   string        `json:"timestamp,omitempty"`
+	Tools       []cdxTool     `json:"-"`
+	Component   *cdxComponent `json:"component,omitempty"`
+	Supplier    *cdxOrgEntity `json:"supplier,omitempty"`
+	Manufacture *cdxOrgEntity `json:"manufacture,omitempty"`
 }
 
 // CycloneDX 1.5+ replaced metadata.tools with metadata.tools.components, but
@@ -46,20 +188,20 @@ type cdxOrgEntity struct {
 }
 
 type cdxComponent struct {
-	BOMRef             string         `json:"bom-ref,omitempty"     xml:"bom-ref,attr,omitempty"`
-	Type               string         `json:"type"                  xml:"type,attr"`
-	Name               string         `json:"name"                  xml:"name"`
-	Version            string         `json:"version,omitempty"     xml:"version,omitempty"`
-	Description        string         `json:"description,omitempty" xml:"description,omitempty"`
-	Copyright          string         `json:"copyright,omitempty"   xml:"copyright,omitempty"`
-	Author             string         `json:"author,omitempty"      xml:"author,omitempty"`
-	PURL               string         `json:"purl,omitempty"        xml:"purl,omitempty"`
-	Supplier           *cdxOrgEntity  `json:"supplier,omitempty"    xml:"supplier,omitempty"`
-	Hashes             []cdxHash      `json:"hashes,omitempty"      xml:"hashes>hash,omitempty"`
-	Licenses           []cdxLicense   `json:"licenses,omitempty"    xml:"licenses>license,omitempty"`
-	ExternalReferences []cdxExtRef    `json:"externalReferences,omitempty" xml:"externalReferences>reference,omitempty"`
-	Properties         []cdxProperty  `json:"properties,omitempty"  xml:"properties>property,omitempty"`
-	Components         []cdxComponent `json:"components,omitempty"  xml:"components>component,omitempty"`
+	BOMRef             string         `json:"bom-ref,omitempty"`
+	Type               string         `json:"type"`
+	Name               string         `json:"name"`
+	Version            string         `json:"version,omitempty"`
+	Description        string         `json:"description,omitempty"`
+	Copyright          string         `json:"copyright,omitempty"`
+	Author             string         `json:"author,omitempty"`
+	PURL               string         `json:"purl,omitempty"`
+	Supplier           *cdxOrgEntity  `json:"supplier,omitempty"`
+	Hashes             []cdxHash      `json:"hashes,omitempty"`
+	Licenses           []cdxLicense   `json:"licenses,omitempty"`
+	ExternalReferences []cdxExtRef    `json:"externalReferences,omitempty"`
+	Properties         []cdxProperty  `json:"properties,omitempty"`
+	Components         []cdxComponent `json:"components,omitempty"`
 }
 
 type cdxHash struct {

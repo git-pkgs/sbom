@@ -48,7 +48,17 @@ s := sbom.New(sbom.TypeCycloneDX)
 s.Document = sbom.Document{
     Name:      "my-app",
     Namespace: "https://example.com/my-app",
-    Component: sbom.Component{Type: "application", Name: "my-app", Version: "1.2.3"},
+    Component: sbom.Component{
+        Type:              "application",
+        Name:              "my-app",
+        Version:           "1.2.3",
+        LicenseExpression: "MIT",
+        LicenseNames:      []string{"Additional Project Terms"},
+        ExtractedLicenses: []sbom.ExtractedLicense{{
+            Name: "LICENSE.custom",
+            Text: "Custom license text",
+        }},
+    },
     Creators:  []sbom.Creator{{Type: "Tool", Name: "my-tool-1.0"}},
 }
 s.AddPackage(sbom.Package{

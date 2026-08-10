@@ -6,20 +6,27 @@ import (
 )
 
 type spdxDoc struct {
-	SPDXVersion       string             `json:"spdxVersion"`
-	SPDXID            string             `json:"SPDXID"`
-	Name              string             `json:"name"`
-	DataLicense       string             `json:"dataLicense"`
-	DocumentNamespace string             `json:"documentNamespace"`
-	CreationInfo      *spdxCreationInfo  `json:"creationInfo"`
-	Packages          []spdxPackage      `json:"packages"`
-	Relationships     []spdxRelationship `json:"relationships,omitempty"`
+	SPDXVersion             string                     `json:"spdxVersion"`
+	SPDXID                  string                     `json:"SPDXID"`
+	Name                    string                     `json:"name"`
+	DataLicense             string                     `json:"dataLicense"`
+	DocumentNamespace       string                     `json:"documentNamespace"`
+	CreationInfo            *spdxCreationInfo          `json:"creationInfo"`
+	Packages                []spdxPackage              `json:"packages"`
+	Relationships           []spdxRelationship         `json:"relationships,omitempty"`
+	ExtractedLicensingInfos []spdxExtractedLicenseInfo `json:"hasExtractedLicensingInfos,omitempty"`
 
 	// Envelope unwrapping: GitHub's dependency-graph API nests under
 	// "sbom", and in-toto attestations nest under "predicate".
 	SBOM          json.RawMessage `json:"sbom,omitempty"`
 	Predicate     json.RawMessage `json:"predicate,omitempty"`
 	PredicateType string          `json:"predicateType,omitempty"`
+}
+
+type spdxExtractedLicenseInfo struct {
+	LicenseID     string `json:"licenseId"`
+	ExtractedText string `json:"extractedText"`
+	Name          string `json:"name,omitempty"`
 }
 
 type spdxCreationInfo struct {

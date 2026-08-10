@@ -1,6 +1,7 @@
 package sbom
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -33,13 +34,12 @@ func Encode(w io.Writer, s *SBOM, f Format) error {
 		return jsonEncode(w, buildCycloneDX(s))
 	case FormatCycloneDXXML:
 		bom := buildCycloneDX(s)
-		bom.XMLNS = cdxXMLNS
 		if _, err := io.WriteString(w, xml.Header); err != nil {
 			return err
 		}
 		enc := xml.NewEncoder(w)
 		enc.Indent("", "  ")
-		return enc.Encode(bom)
+		return enc.Encode(cycloneDXXML(bom))
 	case FormatSPDXJSON:
 		return jsonEncode(w, buildSPDX(s))
 	}
@@ -67,6 +67,7 @@ func buildCycloneDX(s *SBOM) *cdxBOM {
 	if c := s.Document.Component; c.Name != "" {
 		bom.Metadata.Component = &cdxComponent{
 			Type: firstNonEmpty(c.Type, "application"), Name: c.Name, Version: c.Version,
+			Licenses: componentLicensesToCDX(c),
 		}
 	}
 	for _, c := range s.Document.Creators {
@@ -117,6 +118,7 @@ func buildSPDX(s *SBOM) *spdxDoc {
 		SPDXID: spdxRootPkgID, Name: s.Document.Component.Name,
 		VersionInfo: s.Document.Component.Version, DownloadLocation: spdxNoAssertion,
 	}
+	root.LicenseDeclared, doc.ExtractedLicensingInfos = componentLicensesToSPDX(s.Document.Component)
 	doc.Packages = append(doc.Packages, root)
 
 	for i := range s.Packages {
@@ -128,6 +130,91 @@ func buildSPDX(s *SBOM) *spdxDoc {
 		})
 	}
 	return doc
+}
+
+func componentLicensesToCDX(c Component) []cdxLicense {
+	if c.LicenseExpression != "" && len(c.LicenseNames) == 0 && len(c.ExtractedLicenses) == 0 {
+		return []cdxLicense{{Expression: c.LicenseExpression}}
+	}
+
+	licenses := make([]cdxLicense, 0, 1+len(c.LicenseNames)+len(c.ExtractedLicenses))
+	if c.LicenseExpression != "" {
+		licenses = append(licenses, cdxNamedLicense(c.LicenseExpression))
+	}
+	for _, name := range c.LicenseNames {
+		if name != "" {
+			licenses = append(licenses, cdxNamedLicense(name))
+		}
+	}
+	for _, extracted := range c.ExtractedLicenses {
+		if extracted.Name != "" {
+			licenses = append(licenses, cdxNamedLicense(extracted.Name))
+		}
+	}
+	return licenses
+}
+
+func cdxNamedLicense(name string) cdxLicense {
+	return cdxLicense{License: &cdxLicenseID{Name: name}, Name: name}
+}
+
+func componentLicensesToSPDX(c Component) (string, []spdxExtractedLicenseInfo) {
+	parts := make([]string, 0, 1+len(c.LicenseNames)+len(c.ExtractedLicenses))
+	if c.LicenseExpression != "" {
+		parts = append(parts, c.LicenseExpression)
+	}
+
+	infos := make([]spdxExtractedLicenseInfo, 0, len(c.LicenseNames)+len(c.ExtractedLicenses))
+	seen := make(map[string]bool)
+	appendInfo := func(info spdxExtractedLicenseInfo) {
+		if seen[info.LicenseID] {
+			return
+		}
+		seen[info.LicenseID] = true
+		parts = append(parts, info.LicenseID)
+		infos = append(infos, info)
+	}
+	for _, name := range c.LicenseNames {
+		if name == "" {
+			continue
+		}
+		id := extractedLicenseID("", name, name)
+		appendInfo(spdxExtractedLicenseInfo{LicenseID: id, Name: name, ExtractedText: name})
+	}
+	for _, extracted := range c.ExtractedLicenses {
+		if extracted.Name == "" && extracted.Text == "" {
+			continue
+		}
+		text := firstNonEmpty(extracted.Text, extracted.Name)
+		id := extractedLicenseID(extracted.ID, extracted.Name, text)
+		appendInfo(spdxExtractedLicenseInfo{
+			LicenseID: id, Name: extracted.Name, ExtractedText: text,
+		})
+	}
+	return joinLicenseExpression(parts), infos
+}
+
+func extractedLicenseID(id, name, text string) string {
+	if id != "" {
+		if strings.HasPrefix(id, "LicenseRef-") {
+			return id
+		}
+		return "LicenseRef-" + id
+	}
+	digest := sha256.Sum256([]byte(name + "\x00" + text))
+	return fmt.Sprintf("LicenseRef-Component-%x", digest[:8])
+}
+
+func joinLicenseExpression(parts []string) string {
+	if len(parts) == 0 {
+		return ""
+	}
+	for i, part := range parts {
+		if len(parts) > 1 && (strings.Contains(part, " AND ") || strings.Contains(part, " OR ")) {
+			parts[i] = "(" + part + ")"
+		}
+	}
+	return strings.Join(parts, " AND ")
 }
 
 func packageToSPDX(p *Package, i int) spdxPackage {
