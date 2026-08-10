@@ -71,7 +71,8 @@ type Component struct {
 }
 
 // ExtractedLicense is non-SPDX license text associated with a component.
-// ID is optional; Encode generates a stable LicenseRef when it is empty.
+// ID is optional. Encode prefixes a supplied ID with LicenseRef- when needed,
+// or generates a stable LicenseRef when ID is empty.
 type ExtractedLicense struct {
 	ID   string
 	Name string

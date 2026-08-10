@@ -191,6 +191,10 @@ func TestEncodeMixedComponentLicenses(t *testing.T) {
 	if !strings.Contains(root.LicenseDeclared, "(MIT OR Apache-2.0)") {
 		t.Errorf("root licenseDeclared = %q", root.LicenseDeclared)
 	}
+	if !strings.Contains(root.LicenseDeclared, ") AND LicenseRef-") {
+		t.Errorf("root licenseDeclared does not combine independent declarations with AND: %q",
+			root.LicenseDeclared)
+	}
 	if len(spdxDocument.ExtractedLicensingInfos) != 2 {
 		t.Fatalf("extracted licensing infos = %#v", spdxDocument.ExtractedLicensingInfos)
 	}
@@ -208,6 +212,30 @@ func TestEncodeMixedComponentLicenses(t *testing.T) {
 func TestExtractedLicenseIDHonorsExplicitID(t *testing.T) {
 	if got := extractedLicenseID("LicenseRef-Custom", "name", "text"); got != "LicenseRef-Custom" {
 		t.Fatalf("extractedLicenseID = %q", got)
+	}
+	if got := extractedLicenseID("Custom", "name", "text"); got != "LicenseRef-Custom" {
+		t.Fatalf("extractedLicenseID = %q", got)
+	}
+}
+
+func TestComponentLicensesToSPDXDeduplicatesExtractedInfo(t *testing.T) {
+	component := Component{
+		LicenseNames: []string{"Acme Terms", "Acme Terms"},
+		ExtractedLicenses: []ExtractedLicense{
+			{Name: "LICENSE.custom", Text: "Custom terms"},
+			{Name: "LICENSE.custom", Text: "Custom terms"},
+		},
+	}
+
+	expression, infos := componentLicensesToSPDX(component)
+	if len(infos) != 2 {
+		t.Fatalf("extracted licensing infos = %#v, want 2 unique entries", infos)
+	}
+	if strings.Count(expression, "LicenseRef-") != 2 {
+		t.Fatalf("license expression = %q, want 2 unique LicenseRefs", expression)
+	}
+	if !strings.Contains(expression, " AND ") {
+		t.Fatalf("license expression = %q, want conjunction", expression)
 	}
 }
 

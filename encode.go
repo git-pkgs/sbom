@@ -165,13 +165,21 @@ func componentLicensesToSPDX(c Component) (string, []spdxExtractedLicenseInfo) {
 	}
 
 	infos := make([]spdxExtractedLicenseInfo, 0, len(c.LicenseNames)+len(c.ExtractedLicenses))
+	seen := make(map[string]bool)
+	appendInfo := func(info spdxExtractedLicenseInfo) {
+		if seen[info.LicenseID] {
+			return
+		}
+		seen[info.LicenseID] = true
+		parts = append(parts, info.LicenseID)
+		infos = append(infos, info)
+	}
 	for _, name := range c.LicenseNames {
 		if name == "" {
 			continue
 		}
 		id := extractedLicenseID("", name, name)
-		parts = append(parts, id)
-		infos = append(infos, spdxExtractedLicenseInfo{LicenseID: id, Name: name, ExtractedText: name})
+		appendInfo(spdxExtractedLicenseInfo{LicenseID: id, Name: name, ExtractedText: name})
 	}
 	for _, extracted := range c.ExtractedLicenses {
 		if extracted.Name == "" && extracted.Text == "" {
@@ -179,8 +187,7 @@ func componentLicensesToSPDX(c Component) (string, []spdxExtractedLicenseInfo) {
 		}
 		text := firstNonEmpty(extracted.Text, extracted.Name)
 		id := extractedLicenseID(extracted.ID, extracted.Name, text)
-		parts = append(parts, id)
-		infos = append(infos, spdxExtractedLicenseInfo{
+		appendInfo(spdxExtractedLicenseInfo{
 			LicenseID: id, Name: extracted.Name, ExtractedText: text,
 		})
 	}
@@ -189,7 +196,10 @@ func componentLicensesToSPDX(c Component) (string, []spdxExtractedLicenseInfo) {
 
 func extractedLicenseID(id, name, text string) string {
 	if id != "" {
-		return id
+		if strings.HasPrefix(id, "LicenseRef-") {
+			return id
+		}
+		return "LicenseRef-" + id
 	}
 	digest := sha256.Sum256([]byte(name + "\x00" + text))
 	return fmt.Sprintf("LicenseRef-Component-%x", digest[:8])
@@ -204,7 +214,7 @@ func joinLicenseExpression(parts []string) string {
 			parts[i] = "(" + part + ")"
 		}
 	}
-	return strings.Join(parts, " OR ")
+	return strings.Join(parts, " AND ")
 }
 
 func packageToSPDX(p *Package, i int) spdxPackage {
