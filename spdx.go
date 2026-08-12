@@ -162,14 +162,14 @@ func applySPDXCreationInfo(s *SBOM, creationInfo *spdxCreationInfo) {
 		return
 	}
 	s.Document.Created = creationInfo.Created
-	if len(creationInfo.Creators) > 0 {
-		s.Document.Creators = make([]Creator, 0, len(creationInfo.Creators))
-	}
 	for _, c := range creationInfo.Creators {
 		typ, name := splitColon(c)
 		if typ == SupplierOrganization {
 			s.Document.Supplier = name
 		} else {
+			if s.Document.Creators == nil {
+				s.Document.Creators = make([]Creator, 0, len(creationInfo.Creators))
+			}
 			s.Document.Creators = append(s.Document.Creators, Creator{Type: typ, Name: name})
 		}
 	}

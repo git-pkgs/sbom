@@ -2,6 +2,7 @@ package sbom
 
 import (
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -54,6 +55,47 @@ func TestSPDXEmptyCreatorsPreserveNilSlice(t *testing.T) {
 	}
 	if doc.Document.Creators != nil {
 		t.Errorf("Document.Creators = %#v, want nil", doc.Document.Creators)
+	}
+}
+
+func TestSPDXOrganizationOnlyCreatorPreservesNilSlice(t *testing.T) {
+	in := `{
+	  "spdxVersion":"SPDX-2.3","SPDXID":"SPDXRef-DOCUMENT",
+	  "creationInfo":{"creators":["Organization: Acme"]}
+	}`
+	doc, err := Parse([]byte(in))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if doc.Document.Supplier != "Acme" {
+		t.Errorf("Document.Supplier = %q, want Acme", doc.Document.Supplier)
+	}
+	if doc.Document.Creators != nil {
+		t.Errorf("Document.Creators = %#v, want nil", doc.Document.Creators)
+	}
+}
+
+func TestSPDXMixedCreatorsPreserveOrder(t *testing.T) {
+	in := `{
+	  "spdxVersion":"SPDX-2.3","SPDXID":"SPDXRef-DOCUMENT",
+	  "creationInfo":{"creators":[
+	    "Tool: syft","Organization: Acme","Person: Jane Doe","Tool: scanner"
+	  ]}
+	}`
+	doc, err := Parse([]byte(in))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if doc.Document.Supplier != "Acme" {
+		t.Errorf("Document.Supplier = %q, want Acme", doc.Document.Supplier)
+	}
+	want := []Creator{
+		{Type: "Tool", Name: "syft"},
+		{Type: "Person", Name: "Jane Doe"},
+		{Type: "Tool", Name: "scanner"},
+	}
+	if !reflect.DeepEqual(doc.Document.Creators, want) {
+		t.Errorf("Document.Creators = %#v, want %#v", doc.Document.Creators, want)
 	}
 }
 
