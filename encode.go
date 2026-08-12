@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -56,7 +57,7 @@ func nowUTC() string { return time.Now().UTC().Format(time.RFC3339) }
 
 func buildCycloneDX(s *SBOM) *cdxBOM {
 	bom := &cdxBOM{
-		BOMFormat:    "CycloneDX",
+		BOMFormat:    cdxBOMFormat,
 		SpecVersion:  firstNonEmpty(s.SpecVersion, cdxSpecVersion),
 		BOMVersion:   1,
 		SerialNumber: s.Document.ID,
@@ -70,11 +71,18 @@ func buildCycloneDX(s *SBOM) *cdxBOM {
 			Licenses: componentLicensesToCDX(c),
 		}
 	}
-	for _, c := range s.Document.Creators {
-		bom.Metadata.Tools = append(bom.Metadata.Tools, cdxTool{Vendor: c.Type, Name: c.Name})
+	if len(s.Document.Creators) > 0 {
+		bom.Metadata.Tools = make([]cdxTool, len(s.Document.Creators))
+		for i := range s.Document.Creators {
+			creator := &s.Document.Creators[i]
+			bom.Metadata.Tools[i] = cdxTool{Vendor: creator.Type, Name: creator.Name}
+		}
 	}
-	for i := range s.Packages {
-		bom.Components = append(bom.Components, packageToCDX(&s.Packages[i]))
+	if len(s.Packages) > 0 {
+		bom.Components = make([]cdxComponent, len(s.Packages))
+		for i := range s.Packages {
+			bom.Components[i] = packageToCDX(&s.Packages[i])
+		}
 	}
 	return bom
 }
@@ -83,7 +91,7 @@ func packageToCDX(p *Package) cdxComponent {
 	purl := p.PURL()
 	c := cdxComponent{
 		BOMRef:      firstNonEmpty(p.ID, purl),
-		Type:        firstNonEmpty(strings.ToLower(p.Type), cdxDefaultCompType),
+		Type:        cdxPackageType(p.Type),
 		Name:        p.Name,
 		Version:     p.Version,
 		Description: p.Description,
@@ -93,6 +101,40 @@ func packageToCDX(p *Package) cdxComponent {
 		c.Licenses = []cdxLicense{{License: &cdxLicenseID{ID: lic}, ID: lic}}
 	}
 	return c
+}
+
+func cdxPackageType(packageType string) string {
+	switch packageType {
+	case "APPLICATION":
+		return "application"
+	case "CONTAINER":
+		return "container"
+	case "DATA":
+		return "data"
+	case "DEVICE":
+		return "device"
+	case "DEVICE-DRIVER":
+		return "device-driver"
+	case "FILE":
+		return "file"
+	case "FIRMWARE":
+		return "firmware"
+	case "FRAMEWORK":
+		return "framework"
+	case "LIBRARY":
+		return "library"
+	case "MACHINE-LEARNING-MODEL":
+		return "machine-learning-model"
+	case "OPERATING-SYSTEM":
+		return "operating-system"
+	case "PLATFORM":
+		return "platform"
+	case "CRYPTOGRAPHIC-ASSET":
+		return "cryptographic-asset"
+	case "":
+		return cdxDefaultCompType
+	}
+	return strings.ToLower(packageType)
 }
 
 func buildSPDX(s *SBOM) *spdxDoc {
@@ -106,12 +148,20 @@ func buildSPDX(s *SBOM) *spdxDoc {
 			Created: firstNonEmpty(s.Document.Created, nowUTC()),
 		},
 	}
-	for _, c := range s.Document.Creators {
-		doc.CreationInfo.Creators = append(doc.CreationInfo.Creators, c.Type+": "+c.Name)
-	}
+	creatorCount := len(s.Document.Creators)
 	if s.Document.Supplier != "" {
-		doc.CreationInfo.Creators = append(doc.CreationInfo.Creators,
-			SupplierOrganization+": "+s.Document.Supplier)
+		creatorCount++
+	}
+	if creatorCount > 0 {
+		doc.CreationInfo.Creators = make([]string, 0, creatorCount)
+		for i := range s.Document.Creators {
+			creator := &s.Document.Creators[i]
+			doc.CreationInfo.Creators = append(doc.CreationInfo.Creators, creator.Type+": "+creator.Name)
+		}
+		if s.Document.Supplier != "" {
+			doc.CreationInfo.Creators = append(doc.CreationInfo.Creators,
+				SupplierOrganization+": "+s.Document.Supplier)
+		}
 	}
 
 	root := spdxPackage{
@@ -119,15 +169,16 @@ func buildSPDX(s *SBOM) *spdxDoc {
 		VersionInfo: s.Document.Component.Version, DownloadLocation: spdxNoAssertion,
 	}
 	root.LicenseDeclared, doc.ExtractedLicensingInfos = componentLicensesToSPDX(s.Document.Component)
-	doc.Packages = append(doc.Packages, root)
-
+	doc.Packages = make([]spdxPackage, len(s.Packages)+1)
+	doc.Packages[0] = root
+	doc.Relationships = make([]spdxRelationship, len(s.Packages))
 	for i := range s.Packages {
 		sp := packageToSPDX(&s.Packages[i], i)
-		doc.Packages = append(doc.Packages, sp)
-		doc.Relationships = append(doc.Relationships, spdxRelationship{
+		doc.Packages[i+1] = sp
+		doc.Relationships[i] = spdxRelationship{
 			SPDXElementID: spdxRootPkgID, RelationshipType: RelDependsOn,
 			RelatedSPDXElement: sp.SPDXID,
-		})
+		}
 	}
 	return doc
 }
@@ -219,17 +270,20 @@ func joinLicenseExpression(parts []string) string {
 
 func packageToSPDX(p *Package, i int) spdxPackage {
 	sp := spdxPackage{
-		SPDXID:           firstNonEmpty(p.ID, fmt.Sprintf("SPDXRef-Package-%d", i)),
+		SPDXID:           p.ID,
 		Name:             p.Name,
 		VersionInfo:      p.Version,
 		DownloadLocation: firstNonEmpty(p.DownloadLocation, spdxNoAssertion),
 		LicenseConcluded: firstNonEmpty(p.LicenseConcluded, spdxNoAssertion),
 		LicenseDeclared:  firstNonEmpty(p.LicenseDeclared, spdxNoAssertion),
 	}
+	if sp.SPDXID == "" {
+		sp.SPDXID = "SPDXRef-Package-" + strconv.Itoa(i)
+	}
 	if purl := p.PURL(); purl != "" {
-		sp.ExternalRefs = append(sp.ExternalRefs, spdxExtRef{
-			Category: "PACKAGE-MANAGER", Type: "purl", Locator: purl,
-		})
+		sp.ExternalRefs = []spdxExtRef{{
+			Category: "PACKAGE-MANAGER", Type: purlExternalReferenceType, Locator: purl,
+		}}
 	}
 	return sp
 }

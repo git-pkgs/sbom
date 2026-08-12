@@ -87,6 +87,8 @@ type ExternalRef struct {
 	Locator  string
 }
 
+const purlExternalReferenceType = "purl"
+
 // Checksum is a single hash over a package artefact.
 type Checksum struct {
 	Algorithm string
@@ -128,7 +130,7 @@ type Package struct {
 // ExternalRefs so this is a simple lookup.
 func (p *Package) PURL() string {
 	for _, r := range p.ExternalRefs {
-		if r.Type == "purl" {
+		if r.Type == purlExternalReferenceType {
 			return r.Locator
 		}
 	}
@@ -190,6 +192,15 @@ func New(t Type) *SBOM {
 }
 
 func newSBOM(t Type) *SBOM { return New(t) }
+
+func newSizedSBOM(t Type, packages, relationships int) *SBOM {
+	return &SBOM{
+		Type:          t,
+		Packages:      make([]Package, 0, packages),
+		Relationships: make([]Relationship, 0, relationships),
+		pkgIndex:      make(map[[2]string]int, packages),
+	}
+}
 
 // AddPackage appends p, replacing any existing package with the same
 // (Name, Version) pair.
@@ -288,14 +299,15 @@ func (s *SBOM) addPackage(p Package) {
 // Parse sniffs the SBOM format from content and parses it. Only JSON
 // serialisations are supported.
 func Parse(data []byte) (*SBOM, error) {
-	switch Detect(data) {
+	detected := detect(data)
+	switch detected.typ {
 	case TypeCycloneDX:
 		return parseCycloneDX(data)
 	case TypeSPDX:
-		return parseSPDX(data)
+		return parseSPDX(data, detected.spdxEnvelope)
 	}
 	// Fall back to trying both, mirroring Parser#try_both_parsers.
-	if doc, err := parseSPDX(data); err == nil && len(doc.Packages) > 0 {
+	if doc, err := parseSPDX(data, false); err == nil && len(doc.Packages) > 0 {
 		return doc, nil
 	}
 	if doc, err := parseCycloneDX(data); err == nil && len(doc.Packages) > 0 {
@@ -311,46 +323,55 @@ func Parse(data []byte) (*SBOM, error) {
 // skipped without allocation so detection cost is independent of document
 // size once a discriminator is found.
 func Detect(data []byte) Type {
+	return detect(data).typ
+}
+
+type detectedFormat struct {
+	typ          Type
+	spdxEnvelope bool
+}
+
+func detect(data []byte) detectedFormat {
 	data = bytes.TrimSpace(data)
 	if len(data) == 0 || data[0] != '{' {
-		return TypeUnknown
+		return detectedFormat{}
 	}
 	dec := json.NewDecoder(bytes.NewReader(data))
 	if _, err := dec.Token(); err != nil { // opening '{'
-		return TypeUnknown
+		return detectedFormat{}
 	}
 	for dec.More() {
 		tok, err := dec.Token()
 		if err != nil {
-			return TypeUnknown
+			return detectedFormat{}
 		}
 		key, ok := tok.(string)
 		if !ok {
-			return TypeUnknown
+			return detectedFormat{}
 		}
 		switch key {
 		case "bomFormat":
 			var v string
-			if dec.Decode(&v) == nil && v == "CycloneDX" {
-				return TypeCycloneDX
+			if dec.Decode(&v) == nil && v == cdxBOMFormat {
+				return detectedFormat{typ: TypeCycloneDX}
 			}
-			return TypeUnknown
+			return detectedFormat{}
 		case "spdxVersion", "SPDXID":
-			return TypeSPDX
+			return detectedFormat{typ: TypeSPDX}
 		case "sbom":
-			return TypeSPDX
+			return detectedFormat{typ: TypeSPDX, spdxEnvelope: true}
 		case "predicateType":
 			var v string
 			if dec.Decode(&v) == nil && strings.Contains(v, "spdx") {
-				return TypeSPDX
+				return detectedFormat{typ: TypeSPDX, spdxEnvelope: true}
 			}
 		default:
 			if err := skipValue(dec); err != nil {
-				return TypeUnknown
+				return detectedFormat{}
 			}
 		}
 	}
-	return TypeUnknown
+	return detectedFormat{}
 }
 
 // skipValue advances dec past the next JSON value without decoding it.

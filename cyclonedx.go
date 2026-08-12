@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	cdxBOMFormat       = "CycloneDX"
 	cdxXMLNS           = "http://cyclonedx.org/schema/bom/1.5"
 	cdxSpecVersion     = "1.5"
 	cdxDefaultCompType = "library"
@@ -244,11 +245,24 @@ func parseCycloneDX(data []byte) (*SBOM, error) {
 	if err := json.Unmarshal(data, &bom); err != nil {
 		return nil, wrapErr("cyclonedx json", err)
 	}
-	if bom.BOMFormat != "CycloneDX" {
+	if bom.BOMFormat != cdxBOMFormat {
 		return nil, ErrUnrecognized
 	}
 
-	s := newSBOM(TypeCycloneDX)
+	packageCount := len(bom.Components)
+	nestedRelationshipCount := 0
+	for i := range bom.Components {
+		if len(bom.Components[i].Components) > 0 {
+			packageCount, nestedRelationshipCount = cdxComponentStats(bom.Components)
+			break
+		}
+	}
+	relationshipCount := nestedRelationshipCount
+	for i := range bom.Dependencies {
+		relationshipCount += len(bom.Dependencies[i].DependsOn)
+	}
+
+	s := newSizedSBOM(TypeCycloneDX, packageCount, relationshipCount)
 	s.SpecVersion = bom.SpecVersion
 	s.Document = Document{
 		ID:          bom.SerialNumber,
@@ -275,7 +289,8 @@ func parseCycloneDX(data []byte) (*SBOM, error) {
 
 	cdxWalkComponents(s, bom.Components, "")
 
-	for _, d := range bom.Dependencies {
+	for i := range bom.Dependencies {
+		d := &bom.Dependencies[i]
 		for _, t := range d.DependsOn {
 			s.Relationships = append(s.Relationships, Relationship{
 				SourceID: d.Ref, TargetID: t, Type: RelDependsOn,
@@ -284,6 +299,18 @@ func parseCycloneDX(data []byte) (*SBOM, error) {
 	}
 
 	return s, nil
+}
+
+func cdxComponentStats(components []cdxComponent) (packages, relationships int) {
+	packages = len(components)
+	for i := range components {
+		children := components[i].Components
+		relationships += len(children)
+		childPackages, childRelationships := cdxComponentStats(children)
+		packages += childPackages
+		relationships += childRelationships
+	}
+	return packages, relationships
 }
 
 func cdxWalkComponents(s *SBOM, comps []cdxComponent, parent string) {
@@ -315,6 +342,15 @@ func cdxPackage(c *cdxComponent) Package {
 		Description: c.Description,
 		Copyright:   c.Copyright,
 	}
+	if len(c.Hashes) > 0 {
+		p.Checksums = make([]Checksum, len(c.Hashes))
+		for i := range c.Hashes {
+			p.Checksums[i] = Checksum{
+				Algorithm: normalizeChecksumAlgorithm(c.Hashes[i].Alg),
+				Value:     c.Hashes[i].Content,
+			}
+		}
+	}
 	if c.Supplier != nil && c.Supplier.Name != "" {
 		p.Supplier = c.Supplier.Name
 		p.SupplierType = SupplierOrganization
@@ -323,32 +359,61 @@ func cdxPackage(c *cdxComponent) Package {
 		p.Originator = c.Author
 		p.OriginatorType = SupplierPerson
 	}
-	for _, h := range c.Hashes {
-		p.Checksums = append(p.Checksums, Checksum{
-			Algorithm: strings.ReplaceAll(h.Alg, "-", ""),
-			Value:     h.Content,
-		})
-	}
 	for _, l := range c.Licenses {
 		if id := l.value(); id != "" {
 			p.LicenseConcluded = id
 			p.LicenseDeclared = id
 		}
 	}
+	externalReferenceCount := len(c.ExternalReferences)
 	if c.PURL != "" {
-		p.ExternalRefs = append(p.ExternalRefs, ExternalRef{
-			Category: "PACKAGE_MANAGER", Type: "purl", Locator: c.PURL,
-		})
+		externalReferenceCount++
 	}
-	for _, r := range c.ExternalReferences {
-		p.ExternalRefs = append(p.ExternalRefs, ExternalRef{
-			Category: r.Type, Type: r.Type, Locator: r.URL,
-		})
+	if externalReferenceCount > 0 {
+		p.ExternalRefs = make([]ExternalRef, externalReferenceCount)
+		next := 0
+		if c.PURL != "" {
+			p.ExternalRefs[0] = ExternalRef{
+				Category: "PACKAGE_MANAGER", Type: purlExternalReferenceType, Locator: c.PURL,
+			}
+			next = 1
+		}
+		for i := range c.ExternalReferences {
+			r := &c.ExternalReferences[i]
+			p.ExternalRefs[next+i] = ExternalRef{
+				Category: r.Type, Type: r.Type, Locator: r.URL,
+			}
+		}
 	}
-	for _, pr := range c.Properties {
-		p.Properties = append(p.Properties, Property(pr))
+	if len(c.Properties) > 0 {
+		p.Properties = make([]Property, len(c.Properties))
+		for i := range c.Properties {
+			p.Properties[i] = Property(c.Properties[i])
+		}
 	}
 	return p
+}
+
+func normalizeChecksumAlgorithm(algorithm string) string {
+	switch algorithm {
+	case "MD-5":
+		return "MD5"
+	case "SHA-1":
+		return "SHA1"
+	case "SHA-256":
+		return "SHA256"
+	case "SHA-384":
+		return "SHA384"
+	case "SHA-512":
+		return "SHA512"
+	case "SHA3-256":
+		return "SHA3256"
+	case "SHA3-384":
+		return "SHA3384"
+	case "SHA3-512":
+		return "SHA3512"
+	}
+	return strings.ReplaceAll(algorithm, "-", "")
 }
 
 func (l cdxLicense) value() string {
@@ -365,5 +430,34 @@ func (l cdxLicense) value() string {
 }
 
 func normalizePackageType(t string) string {
-	return strings.ToUpper(strings.ReplaceAll(strings.TrimSpace(t), "_", "-"))
+	t = strings.TrimSpace(t)
+	switch t {
+	case "application":
+		return "APPLICATION"
+	case "container":
+		return "CONTAINER"
+	case "data":
+		return "DATA"
+	case "device":
+		return "DEVICE"
+	case "device-driver":
+		return "DEVICE-DRIVER"
+	case "file":
+		return "FILE"
+	case "firmware":
+		return "FIRMWARE"
+	case "framework":
+		return "FRAMEWORK"
+	case "library":
+		return "LIBRARY"
+	case "machine-learning-model":
+		return "MACHINE-LEARNING-MODEL"
+	case "operating-system":
+		return "OPERATING-SYSTEM"
+	case "platform":
+		return "PLATFORM"
+	case "cryptographic-asset":
+		return "CRYPTOGRAPHIC-ASSET"
+	}
+	return strings.ToUpper(strings.ReplaceAll(t, "_", "-"))
 }
