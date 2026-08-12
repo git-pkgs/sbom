@@ -30,6 +30,33 @@ func TestSPDXExternalRefPURL(t *testing.T) {
 	}
 }
 
+func TestSPDXEmptyDocumentPreservesNilSlices(t *testing.T) {
+	doc, err := Parse([]byte(`{"spdxVersion":"SPDX-2.3","SPDXID":"SPDXRef-DOCUMENT"}`))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if doc.Packages != nil {
+		t.Errorf("Packages = %#v, want nil", doc.Packages)
+	}
+	if doc.Relationships != nil {
+		t.Errorf("Relationships = %#v, want nil", doc.Relationships)
+	}
+}
+
+func TestSPDXEmptyCreatorsPreserveNilSlice(t *testing.T) {
+	in := `{
+	  "spdxVersion":"SPDX-2.3","SPDXID":"SPDXRef-DOCUMENT",
+	  "creationInfo":{"created":"2026-01-01T00:00:00Z","creators":[]}
+	}`
+	doc, err := Parse([]byte(in))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if doc.Document.Creators != nil {
+		t.Errorf("Document.Creators = %#v, want nil", doc.Document.Creators)
+	}
+}
+
 func TestSPDXSupplierOriginator(t *testing.T) {
 	in := `{
 	  "spdxVersion":"SPDX-2.3","SPDXID":"SPDXRef-DOCUMENT",

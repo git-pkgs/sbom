@@ -97,18 +97,7 @@ func parseSPDX(data []byte, envelope bool) (*SBOM, error) {
 		DataLicense: doc.DataLicense,
 		Namespace:   doc.DocumentNamespace,
 	}
-	if ci := doc.CreationInfo; ci != nil {
-		s.Document.Created = ci.Created
-		s.Document.Creators = make([]Creator, 0, len(ci.Creators))
-		for _, c := range ci.Creators {
-			typ, name := splitColon(c)
-			if typ == SupplierOrganization {
-				s.Document.Supplier = name
-			} else {
-				s.Document.Creators = append(s.Document.Creators, Creator{Type: typ, Name: name})
-			}
-		}
-	}
+	applySPDXCreationInfo(s, doc.CreationInfo)
 
 	var elements map[string]string
 	if len(doc.Relationships) > 0 {
@@ -166,6 +155,24 @@ func parseSPDX(data []byte, envelope bool) (*SBOM, error) {
 	}
 
 	return s, nil
+}
+
+func applySPDXCreationInfo(s *SBOM, creationInfo *spdxCreationInfo) {
+	if creationInfo == nil {
+		return
+	}
+	s.Document.Created = creationInfo.Created
+	if len(creationInfo.Creators) > 0 {
+		s.Document.Creators = make([]Creator, 0, len(creationInfo.Creators))
+	}
+	for _, c := range creationInfo.Creators {
+		typ, name := splitColon(c)
+		if typ == SupplierOrganization {
+			s.Document.Supplier = name
+		} else {
+			s.Document.Creators = append(s.Document.Creators, Creator{Type: typ, Name: name})
+		}
+	}
 }
 
 func unwrapSPDXEnvelope(data []byte, envelope bool) ([]byte, error) {

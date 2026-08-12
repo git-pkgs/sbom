@@ -194,12 +194,17 @@ func New(t Type) *SBOM {
 func newSBOM(t Type) *SBOM { return New(t) }
 
 func newSizedSBOM(t Type, packages, relationships int) *SBOM {
-	return &SBOM{
-		Type:          t,
-		Packages:      make([]Package, 0, packages),
-		Relationships: make([]Relationship, 0, relationships),
-		pkgIndex:      make(map[[2]string]int, packages),
+	s := &SBOM{
+		Type:     t,
+		pkgIndex: make(map[[2]string]int, packages),
 	}
+	if packages > 0 {
+		s.Packages = make([]Package, 0, packages)
+	}
+	if relationships > 0 {
+		s.Relationships = make([]Relationship, 0, relationships)
+	}
+	return s
 }
 
 // AddPackage appends p, replacing any existing package with the same

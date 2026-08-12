@@ -53,6 +53,19 @@ func TestCycloneDXNestedComponents(t *testing.T) {
 	}
 }
 
+func TestCycloneDXEmptyDocumentPreservesNilSlices(t *testing.T) {
+	doc, err := Parse([]byte(`{"bomFormat":"CycloneDX","specVersion":"1.6"}`))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if doc.Packages != nil {
+		t.Errorf("Packages = %#v, want nil", doc.Packages)
+	}
+	if doc.Relationships != nil {
+		t.Errorf("Relationships = %#v, want nil", doc.Relationships)
+	}
+}
+
 func TestCycloneDXDependencies(t *testing.T) {
 	in := `{
 	  "bomFormat":"CycloneDX","specVersion":"1.5",
