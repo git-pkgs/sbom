@@ -2,6 +2,7 @@ package sbom
 
 import (
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -27,6 +28,74 @@ func TestSPDXExternalRefPURL(t *testing.T) {
 	}
 	if p.CPE() != "cpe:2.3:a:lodash:lodash:4.17.21" {
 		t.Errorf("CPE = %q", p.CPE())
+	}
+}
+
+func TestSPDXEmptyDocumentPreservesNilSlices(t *testing.T) {
+	doc, err := Parse([]byte(`{"spdxVersion":"SPDX-2.3","SPDXID":"SPDXRef-DOCUMENT"}`))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if doc.Packages != nil {
+		t.Errorf("Packages = %#v, want nil", doc.Packages)
+	}
+	if doc.Relationships != nil {
+		t.Errorf("Relationships = %#v, want nil", doc.Relationships)
+	}
+}
+
+func TestSPDXEmptyCreatorsPreserveNilSlice(t *testing.T) {
+	in := `{
+	  "spdxVersion":"SPDX-2.3","SPDXID":"SPDXRef-DOCUMENT",
+	  "creationInfo":{"created":"2026-01-01T00:00:00Z","creators":[]}
+	}`
+	doc, err := Parse([]byte(in))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if doc.Document.Creators != nil {
+		t.Errorf("Document.Creators = %#v, want nil", doc.Document.Creators)
+	}
+}
+
+func TestSPDXOrganizationOnlyCreatorPreservesNilSlice(t *testing.T) {
+	in := `{
+	  "spdxVersion":"SPDX-2.3","SPDXID":"SPDXRef-DOCUMENT",
+	  "creationInfo":{"creators":["Organization: Acme"]}
+	}`
+	doc, err := Parse([]byte(in))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if doc.Document.Supplier != "Acme" {
+		t.Errorf("Document.Supplier = %q, want Acme", doc.Document.Supplier)
+	}
+	if doc.Document.Creators != nil {
+		t.Errorf("Document.Creators = %#v, want nil", doc.Document.Creators)
+	}
+}
+
+func TestSPDXMixedCreatorsPreserveOrder(t *testing.T) {
+	in := `{
+	  "spdxVersion":"SPDX-2.3","SPDXID":"SPDXRef-DOCUMENT",
+	  "creationInfo":{"creators":[
+	    "Tool: syft","Organization: Acme","Person: Jane Doe","Tool: scanner"
+	  ]}
+	}`
+	doc, err := Parse([]byte(in))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if doc.Document.Supplier != "Acme" {
+		t.Errorf("Document.Supplier = %q, want Acme", doc.Document.Supplier)
+	}
+	want := []Creator{
+		{Type: "Tool", Name: "syft"},
+		{Type: "Person", Name: "Jane Doe"},
+		{Type: "Tool", Name: "scanner"},
+	}
+	if !reflect.DeepEqual(doc.Document.Creators, want) {
+		t.Errorf("Document.Creators = %#v, want %#v", doc.Document.Creators, want)
 	}
 }
 

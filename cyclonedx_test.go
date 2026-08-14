@@ -1,6 +1,9 @@
 package sbom
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 func TestCycloneDXLicenseShapes(t *testing.T) {
 	in := `{
@@ -50,6 +53,19 @@ func TestCycloneDXNestedComponents(t *testing.T) {
 	}
 }
 
+func TestCycloneDXEmptyDocumentPreservesNilSlices(t *testing.T) {
+	doc, err := Parse([]byte(`{"bomFormat":"CycloneDX","specVersion":"1.6"}`))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if doc.Packages != nil {
+		t.Errorf("Packages = %#v, want nil", doc.Packages)
+	}
+	if doc.Relationships != nil {
+		t.Errorf("Relationships = %#v, want nil", doc.Relationships)
+	}
+}
+
 func TestCycloneDXDependencies(t *testing.T) {
 	in := `{
 	  "bomFormat":"CycloneDX","specVersion":"1.5",
@@ -66,5 +82,47 @@ func TestCycloneDXDependencies(t *testing.T) {
 	r := doc.Relationships[0]
 	if r.SourceID != "a" || r.TargetID != "b" || r.Type != "DEPENDS_ON" {
 		t.Errorf("relationship = %+v", r)
+	}
+}
+
+func TestCycloneDXPackageMetadata(t *testing.T) {
+	in := `{
+	  "bomFormat":"CycloneDX","specVersion":"1.6",
+	  "components":[{
+	    "bom-ref":"pkg","type":"device_driver","name":"driver","version":"1.0.0",
+	    "author":"Jane Doe","supplier":{"name":"Acme"},
+	    "hashes":[{"alg":"SHA-256","content":"abc"},{"alg":"BLAKE2b-256","content":"def"}],
+	    "purl":"pkg:generic/driver@1.0.0",
+	    "externalReferences":[{"type":"website","url":"https://example.com"}],
+	    "properties":[{"name":"scope","value":"runtime"}]
+	  }]
+	}`
+	doc, err := Parse([]byte(in))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	p := doc.Packages[0]
+	if p.Type != "DEVICE-DRIVER" {
+		t.Errorf("Type = %q", p.Type)
+	}
+	if p.SupplierType != SupplierOrganization || p.Supplier != "Acme" {
+		t.Errorf("supplier = %q/%q", p.SupplierType, p.Supplier)
+	}
+	if p.OriginatorType != SupplierPerson || p.Originator != "Jane Doe" {
+		t.Errorf("originator = %q/%q", p.OriginatorType, p.Originator)
+	}
+	wantChecksums := []Checksum{{Algorithm: "SHA256", Value: "abc"}, {Algorithm: "BLAKE2b256", Value: "def"}}
+	if !reflect.DeepEqual(p.Checksums, wantChecksums) {
+		t.Errorf("Checksums = %#v, want %#v", p.Checksums, wantChecksums)
+	}
+	wantReferences := []ExternalRef{
+		{Category: "PACKAGE_MANAGER", Type: "purl", Locator: "pkg:generic/driver@1.0.0"},
+		{Category: "website", Type: "website", Locator: "https://example.com"},
+	}
+	if !reflect.DeepEqual(p.ExternalRefs, wantReferences) {
+		t.Errorf("ExternalRefs = %#v, want %#v", p.ExternalRefs, wantReferences)
+	}
+	if !reflect.DeepEqual(p.Properties, []Property{{Name: "scope", Value: "runtime"}}) {
+		t.Errorf("Properties = %#v", p.Properties)
 	}
 }

@@ -97,6 +97,29 @@ func TestEncodeSPDXNoEnvelopeFields(t *testing.T) {
 	}
 }
 
+func TestEncodeSPDXGeneratedPackageIDsAndRelationshipOrder(t *testing.T) {
+	s := sampleSBOM()
+	var output bytes.Buffer
+	if err := Encode(&output, s, FormatSPDXJSON); err != nil {
+		t.Fatalf("Encode: %v", err)
+	}
+	var doc spdxDoc
+	if err := json.Unmarshal(output.Bytes(), &doc); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	wantIDs := []string{spdxRootPkgID, "SPDXRef-Package-0", "SPDXRef-Package-1"}
+	for i, want := range wantIDs {
+		if doc.Packages[i].SPDXID != want {
+			t.Errorf("Packages[%d].SPDXID = %q, want %q", i, doc.Packages[i].SPDXID, want)
+		}
+	}
+	for i := range doc.Relationships {
+		if doc.Relationships[i].RelatedSPDXElement != wantIDs[i+1] {
+			t.Errorf("Relationships[%d] = %#v", i, doc.Relationships[i])
+		}
+	}
+}
+
 func TestEncodeComponentLicenseExpression(t *testing.T) {
 	s := sampleSBOM()
 	s.Document.Component.LicenseExpression = "MIT OR Apache-2.0"

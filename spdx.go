@@ -15,12 +15,12 @@ type spdxDoc struct {
 	Packages                []spdxPackage              `json:"packages"`
 	Relationships           []spdxRelationship         `json:"relationships,omitempty"`
 	ExtractedLicensingInfos []spdxExtractedLicenseInfo `json:"hasExtractedLicensingInfos,omitempty"`
+}
 
-	// Envelope unwrapping: GitHub's dependency-graph API nests under
-	// "sbom", and in-toto attestations nest under "predicate".
-	SBOM          json.RawMessage `json:"sbom,omitempty"`
-	Predicate     json.RawMessage `json:"predicate,omitempty"`
-	PredicateType string          `json:"predicateType,omitempty"`
+type spdxEnvelope struct {
+	SBOM          json.RawMessage `json:"sbom"`
+	Predicate     json.RawMessage `json:"predicate"`
+	PredicateType string          `json:"predicateType"`
 }
 
 type spdxExtractedLicenseInfo struct {
@@ -72,28 +72,22 @@ type spdxRelationship struct {
 
 const maxEnvelopeDepth = 3
 
-func parseSPDX(data []byte) (*SBOM, error) {
+func parseSPDX(data []byte, envelope bool) (*SBOM, error) {
+	var err error
+	data, err = unwrapSPDXEnvelope(data, envelope)
+	if err != nil {
+		return nil, err
+	}
+
 	var doc spdxDoc
-	for range maxEnvelopeDepth {
-		doc = spdxDoc{}
-		if err := json.Unmarshal(data, &doc); err != nil {
-			return nil, wrapErr("spdx json", err)
-		}
-		if len(doc.SBOM) > 0 {
-			data = doc.SBOM
-			continue
-		}
-		if strings.Contains(doc.PredicateType, "spdx") && len(doc.Predicate) > 0 {
-			data = doc.Predicate
-			continue
-		}
-		break
+	if err := json.Unmarshal(data, &doc); err != nil {
+		return nil, wrapErr("spdx json", err)
 	}
 	if doc.SPDXVersion == "" && doc.SPDXID == "" {
 		return nil, ErrUnrecognized
 	}
 
-	s := newSBOM(TypeSPDX)
+	s := newSizedSBOM(TypeSPDX, len(doc.Packages), len(doc.Relationships))
 	s.SpecVersion = doc.SPDXVersion
 	s.Document = Document{
 		Name:        doc.Name,
@@ -103,19 +97,13 @@ func parseSPDX(data []byte) (*SBOM, error) {
 		DataLicense: doc.DataLicense,
 		Namespace:   doc.DocumentNamespace,
 	}
-	if ci := doc.CreationInfo; ci != nil {
-		s.Document.Created = ci.Created
-		for _, c := range ci.Creators {
-			typ, name := splitColon(c)
-			if typ == SupplierOrganization {
-				s.Document.Supplier = name
-			} else {
-				s.Document.Creators = append(s.Document.Creators, Creator{Type: typ, Name: name})
-			}
-		}
-	}
+	applySPDXCreationInfo(s, doc.CreationInfo)
 
-	elements := map[string]string{doc.SPDXID: doc.Name}
+	var elements map[string]string
+	if len(doc.Relationships) > 0 {
+		elements = make(map[string]string, len(doc.Packages)+1)
+		elements[doc.SPDXID] = doc.Name
+	}
 	for i := range doc.Packages {
 		sp := &doc.Packages[i]
 		p := Package{
@@ -137,17 +125,26 @@ func parseSPDX(data []byte) (*SBOM, error) {
 		if sp.Originator != "" {
 			p.OriginatorType, p.Originator = splitColon(sp.Originator)
 		}
-		for _, c := range sp.Checksums {
-			p.Checksums = append(p.Checksums, Checksum(c))
+		if len(sp.Checksums) > 0 {
+			p.Checksums = make([]Checksum, len(sp.Checksums))
+			for i := range sp.Checksums {
+				p.Checksums[i] = Checksum(sp.Checksums[i])
+			}
 		}
-		for _, r := range sp.ExternalRefs {
-			p.ExternalRefs = append(p.ExternalRefs, ExternalRef(r))
+		if len(sp.ExternalRefs) > 0 {
+			p.ExternalRefs = make([]ExternalRef, len(sp.ExternalRefs))
+			for i := range sp.ExternalRefs {
+				p.ExternalRefs[i] = ExternalRef(sp.ExternalRefs[i])
+			}
 		}
-		elements[sp.SPDXID] = sp.Name
+		if elements != nil {
+			elements[sp.SPDXID] = sp.Name
+		}
 		s.addPackage(p)
 	}
 
-	for _, r := range doc.Relationships {
+	for i := range doc.Relationships {
+		r := &doc.Relationships[i]
 		s.Relationships = append(s.Relationships, Relationship{
 			SourceID: r.SPDXElementID,
 			Source:   elements[r.SPDXElementID],
@@ -158,6 +155,48 @@ func parseSPDX(data []byte) (*SBOM, error) {
 	}
 
 	return s, nil
+}
+
+func applySPDXCreationInfo(s *SBOM, creationInfo *spdxCreationInfo) {
+	if creationInfo == nil {
+		return
+	}
+	s.Document.Created = creationInfo.Created
+	for _, c := range creationInfo.Creators {
+		typ, name := splitColon(c)
+		if typ == SupplierOrganization {
+			s.Document.Supplier = name
+		} else {
+			if s.Document.Creators == nil {
+				s.Document.Creators = make([]Creator, 0, len(creationInfo.Creators))
+			}
+			s.Document.Creators = append(s.Document.Creators, Creator{Type: typ, Name: name})
+		}
+	}
+}
+
+func unwrapSPDXEnvelope(data []byte, envelope bool) ([]byte, error) {
+	for range maxEnvelopeDepth - 1 {
+		if !envelope {
+			break
+		}
+		var outer spdxEnvelope
+		if err := json.Unmarshal(data, &outer); err != nil {
+			return nil, wrapErr("spdx json", err)
+		}
+		if len(outer.SBOM) > 0 {
+			data = outer.SBOM
+			envelope = detect(data).spdxEnvelope
+			continue
+		}
+		if strings.Contains(outer.PredicateType, "spdx") && len(outer.Predicate) > 0 {
+			data = outer.Predicate
+			envelope = detect(data).spdxEnvelope
+			continue
+		}
+		break
+	}
+	return data, nil
 }
 
 func splitColon(s string) (typ, name string) {
