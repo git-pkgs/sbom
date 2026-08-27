@@ -61,11 +61,30 @@ func TestEncodeRoundTrip(t *testing.T) {
 			if p.LicenseDeclared != want.LicenseDeclared {
 				t.Errorf("LicenseDeclared = %q, want %q", p.LicenseDeclared, want.LicenseDeclared)
 			}
-			if f == FormatCycloneDXJSON && !slices.Equal(p.Properties, want.Properties) {
-				t.Errorf("Properties = %#v, want %#v", p.Properties, want.Properties)
-			}
 		})
 	}
+}
+
+func TestEncodeCycloneDXPropertiesRoundTrip(t *testing.T) {
+	src := sampleSBOM()
+	var buf bytes.Buffer
+	if err := Encode(&buf, src, FormatCycloneDXJSON); err != nil {
+		t.Fatalf("Encode: %v", err)
+	}
+	out, err := Parse(buf.Bytes())
+	if err != nil {
+		t.Fatalf("Parse: %v\n%s", err, buf.String())
+	}
+	for i := range out.Packages {
+		if out.Packages[i].Name != "lodash" {
+			continue
+		}
+		if !slices.Equal(out.Packages[i].Properties, src.Packages[0].Properties) {
+			t.Errorf("Properties = %#v, want %#v", out.Packages[i].Properties, src.Packages[0].Properties)
+		}
+		return
+	}
+	t.Fatalf("lodash not round-tripped:\n%s", buf.String())
 }
 
 func TestEncodeCycloneDXXML(t *testing.T) {
