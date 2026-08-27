@@ -100,6 +100,12 @@ func packageToCDX(p *Package) cdxComponent {
 	if lic := firstNonEmpty(p.LicenseDeclared, p.LicenseConcluded); lic != "" {
 		c.Licenses = []cdxLicense{{License: &cdxLicenseID{ID: lic}, ID: lic}}
 	}
+	if len(p.Properties) > 0 {
+		c.Properties = make([]cdxProperty, len(p.Properties))
+		for i := range p.Properties {
+			c.Properties[i] = cdxProperty(p.Properties[i])
+		}
+	}
 	return c
 }
 
