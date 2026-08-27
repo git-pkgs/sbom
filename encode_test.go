@@ -3,6 +3,7 @@ package sbom
 import (
 	"bytes"
 	"encoding/json"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -18,6 +19,7 @@ func sampleSBOM() *SBOM {
 	s.AddPackage(Package{
 		Name: "lodash", Version: "4.17.21", LicenseDeclared: "MIT",
 		ExternalRefs: []ExternalRef{{Category: "PACKAGE_MANAGER", Type: "purl", Locator: "pkg:npm/lodash@4.17.21"}},
+		Properties:   []Property{{Name: "location", Value: "package.json"}},
 	})
 	s.AddPackage(Package{Name: "left-pad", Version: "1.3.0"})
 	return s
@@ -59,6 +61,9 @@ func TestEncodeRoundTrip(t *testing.T) {
 			if p.LicenseDeclared != want.LicenseDeclared {
 				t.Errorf("LicenseDeclared = %q, want %q", p.LicenseDeclared, want.LicenseDeclared)
 			}
+			if f == FormatCycloneDXJSON && !slices.Equal(p.Properties, want.Properties) {
+				t.Errorf("Properties = %#v, want %#v", p.Properties, want.Properties)
+			}
 		})
 	}
 }
@@ -74,6 +79,7 @@ func TestEncodeCycloneDXXML(t *testing.T) {
 		`<name>lodash</name>`,
 		`<purl>pkg:npm/lodash@4.17.21</purl>`,
 		`<id>MIT</id>`,
+		`<property name="location">package.json</property>`,
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("missing %q in:\n%s", want, out)
