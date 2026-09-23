@@ -113,4 +113,4 @@ On an M1 Pro, `Parse` runs at roughly 100-165 MB/s; the 3 MB syft-generated `ngi
 
 ## License
 
-MIT
+[MIT](LICENSE).
