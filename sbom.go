@@ -120,6 +120,9 @@ type Package struct {
 	Homepage         string
 	DownloadLocation string
 	Filename         string
+	// SourceInfo is SPDX's free-text note on where the package information
+	// came from (PackageSourceInfo).
+	SourceInfo       string
 	LicenseConcluded string
 	LicenseDeclared  string
 	Copyright        string
@@ -165,12 +168,15 @@ func (p *Package) CPE() string {
 }
 
 // Relationship type values. SPDX has ~40 of these; we name the two the
-// parsers emit and ClassifyScope reads. CycloneDX dependency edges are
-// normalised to RelDependsOn.
+// parsers emit and ClassifyScope reads. CycloneDX dependency edges and
+// SPDX DEPENDENCY_OF edges are normalised to RelDependsOn.
 const (
 	RelDependsOn = "DEPENDS_ON"
 	RelDescribes = "DESCRIBES"
 )
+
+// spdxDependencyOf is the SPDX inverse of DEPENDS_ON, which syft emits.
+const spdxDependencyOf = "DEPENDENCY_OF"
 
 // Scope values returned by ClassifyScope.
 const (

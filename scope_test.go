@@ -2,10 +2,12 @@ package sbom
 
 import (
 	"bytes"
+	"fmt"
 	"maps"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -249,37 +251,48 @@ func TestClassifyScopeSyftLockFiles(t *testing.T) {
 		{"yarn", map[string]string{"express": ScopeDirect, "accepts": ScopeTransitive}, []string{""}},
 	}
 	for _, tt := range tests {
-		t.Run(tt.file, func(t *testing.T) {
-			data, err := os.ReadFile(filepath.Join("testdata", "cyclonedx", "syft-lock", tt.file+".cdx.json"))
-			if err != nil {
-				t.Fatal(err)
-			}
-			doc, err := Parse(data)
-			if err != nil {
-				t.Fatal(err)
-			}
-			names := map[string]string{}
-			for _, p := range doc.Packages {
-				names[p.ID] = p.Name
-			}
-			got := map[string]string{}
-			for id, sc := range doc.ClassifyScope() {
-				got[names[id]] = sc
-			}
-			if !maps.Equal(got, tt.want) {
-				t.Errorf("scope = %v, want %v", got, tt.want)
-			}
-			// The scanned directory, which syft names in metadata.component
-			// without edges, is a root too; it has no package entry.
-			ids, declared := doc.Roots()
-			var roots []string
-			for _, id := range ids {
-				roots = append(roots, names[id])
-			}
-			slices.Sort(roots)
-			if declared || !slices.Equal(roots, tt.roots) {
-				t.Errorf("Roots() = %v, %v; want %v, false", roots, declared, tt.roots)
-			}
-		})
+		for _, format := range []string{"cyclonedx/syft-lock/%s.cdx.json", "spdx/syft-lock/%s.spdx.json"} {
+			t.Run(fmt.Sprintf(format, tt.file), func(t *testing.T) {
+				testSyftLockScope(t, filepath.Join("testdata", fmt.Sprintf(format, tt.file)), tt.want, tt.roots)
+			})
+		}
+	}
+}
+
+func testSyftLockScope(t *testing.T, file string, want map[string]string, wantRoots []string) {
+	t.Helper()
+	data, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc, err := Parse(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	names := map[string]string{}
+	for _, p := range doc.Packages {
+		// The scanned directory is a package in SPDX; in CycloneDX it
+		// is metadata.component, without a package entry.
+		if !strings.HasPrefix(p.ID, "SPDXRef-DocumentRoot-") {
+			names[p.ID] = p.Name
+		}
+	}
+	got := map[string]string{}
+	for id, sc := range doc.ClassifyScope() {
+		got[names[id]] = sc
+	}
+	if !maps.Equal(got, want) {
+		t.Errorf("scope = %v, want %v", got, want)
+	}
+	// The scanned directory, which syft declares as the root without
+	// edges, is a root too and shows as "".
+	ids, declared := doc.Roots()
+	var roots []string
+	for _, id := range ids {
+		roots = append(roots, names[id])
+	}
+	slices.Sort(roots)
+	if declared || !slices.Equal(roots, wantRoots) {
+		t.Errorf("Roots() = %v, %v; want %v, false", roots, declared, wantRoots)
 	}
 }

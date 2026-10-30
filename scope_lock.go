@@ -1,25 +1,44 @@
 package sbom
 
-// syft records which lock file entry a package came from in the
-// syft:package:metadataType property. These lock files list only the
-// project's dependencies, not the project itself, so a package from one
-// that nothing depends on is a direct dependency rather than the project.
-// npm's package-lock.json, Cargo.lock, uv.lock and yarn berry's yarn.lock
-// do list the project, and are left to root inference.
-var projectlessLockEntries = map[string]bool{
-	"python-poetry-lock-entry":   true,
-	"python-pdm-lock-entry":      true,
-	"javascript-pnpm-lock-entry": true,
-	"javascript-yarn-lock-entry": true, // yarn v1; see yarnBerryWorkspaces
+import (
+	"path"
+	"strings"
+)
+
+// These lock files list only the project's dependencies, not the project
+// itself, so a package from one that nothing depends on is a direct
+// dependency rather than the project. npm's package-lock.json, Cargo.lock,
+// uv.lock and yarn berry's yarn.lock do list the project, and are left to
+// root inference.
+var projectlessLockFiles = map[string]bool{
+	"poetry.lock":    true,
+	"pdm.lock":       true,
+	"pnpm-lock.yaml": true,
+	"yarn.lock":      true, // yarn v1; see yarnBerryWorkspaces
 }
 
 const (
-	syftMetadataType = "syft:package:metadataType"
+	// syftLocationPath is the CycloneDX property syft records the file a
+	// package was read from in.
 	syftLocationPath = "syft:location:0:path"
 	// yarnBerryWorkspaceVersion is the version yarn berry gives the
 	// workspace entries it records for the project.
 	yarnBerryWorkspaceVersion = "0.0.0-use.local"
 )
+
+// lockFile returns the path of the file syft read p from: the location
+// property in CycloneDX, or the path ending SPDX's PackageSourceInfo, as in
+// "acquired package info from installed python package manifest file:
+// /poetry.lock".
+func (p *Package) lockFile() string {
+	if loc := p.property(syftLocationPath); loc != "" {
+		return loc
+	}
+	if i := strings.LastIndex(p.SourceInfo, ": /"); i >= 0 {
+		return p.SourceInfo[i+2:]
+	}
+	return ""
+}
 
 // topLevelDependencies returns the IDs among candidates that are packages
 // from a lock file that leaves the project out, so are dependencies of the
@@ -32,15 +51,16 @@ func (s *SBOM) topLevelDependencies(candidates map[string]bool) map[string]bool 
 		if !candidates[p.ID] {
 			continue
 		}
-		kind := p.property(syftMetadataType)
-		if !projectlessLockEntries[kind] {
+		lock := p.lockFile()
+		name := path.Base(lock)
+		if lock == "" || !projectlessLockFiles[name] {
 			continue
 		}
-		if kind == "javascript-yarn-lock-entry" {
+		if name == "yarn.lock" {
 			if berryLocks == nil {
 				berryLocks = s.yarnBerryWorkspaces()
 			}
-			if berryLocks[p.property(syftLocationPath)] {
+			if berryLocks[lock] {
 				continue
 			}
 		}
@@ -58,8 +78,8 @@ func (s *SBOM) yarnBerryWorkspaces() map[string]bool {
 	locks := map[string]bool{}
 	for i := range s.Packages {
 		p := &s.Packages[i]
-		if p.Version == yarnBerryWorkspaceVersion && p.property(syftMetadataType) == "javascript-yarn-lock-entry" {
-			locks[p.property(syftLocationPath)] = true
+		if lock := p.lockFile(); p.Version == yarnBerryWorkspaceVersion && path.Base(lock) == "yarn.lock" {
+			locks[lock] = true
 		}
 	}
 	return locks
