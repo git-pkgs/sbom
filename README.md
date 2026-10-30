@@ -91,6 +91,14 @@ for _, p := range doc.Packages {
 
 `ClassifyScope` returns `nil` when the document has no dependency graph at all, so callers can hide a scope filter rather than showing every package as unclassified.
 
+When the document declares its root, through an SPDX `DESCRIBES` edge or the CycloneDX `metadata.component` bom-ref (kept as `Document.Component.ID`), and that root has dependency edges, it is the only root. Otherwise roots are inferred as the nodes that have dependencies but no dependents. That is the project for lock files that list it, such as `package-lock.json`, `Cargo.lock` and `uv.lock`. Lock files such as `poetry.lock` list only dependencies, so the inferred roots would be the top-level dependencies. For packages syft records as coming from `poetry.lock`, `pdm.lock`, `pnpm-lock.yaml` or a yarn v1 `yarn.lock`, those are classified as direct instead. Other generators' lock-file SBOMs that don't link the project may still have top-level dependencies inferred as roots.
+
+`Roots` returns the root IDs and whether the document declared them, so a caller can tell the project apart from an inferred root:
+
+```go
+ids, declared := doc.Roots()
+```
+
 ## Ancestors
 
 `Package.Ancestors` records the components a package was derived from, such as the upstream project of a fork. CycloneDX JSON and XML read and write these as `pedigree.ancestors`:

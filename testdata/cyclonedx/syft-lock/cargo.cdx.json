@@ -1,0 +1,192 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-10-30T00:00:00Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "author": "anchore",
+          "name": "syft",
+          "version": "1.55.0"
+        }
+      ]
+    },
+    "component": {
+      "bom-ref": "cf2ed2b38a4108cf",
+      "type": "file",
+      "name": "cargo"
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "728030f2ab43f725",
+      "type": "library",
+      "name": "app",
+      "version": "0.1.0",
+      "cpe": "cpe:2.3:a:app_project:app:0.1.0:*:*:*:*:rust:*:*",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "rust-cargo-lock-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "rust"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "rust-crate"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "rust-cargo-lock-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:app:app:0.1.0:*:*:*:*:rust:*:*"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/Cargo.lock"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:cargo/serde@1.0.190?package-id=9981dc59cb3e1cb9",
+      "type": "library",
+      "name": "serde",
+      "version": "1.0.190",
+      "cpe": "cpe:2.3:a:serde_project:serde:1.0.190:*:*:*:*:rust:*:*",
+      "purl": "pkg:cargo/serde@1.0.190",
+      "externalReferences": [
+        {
+          "url": "registry+https://github.com/rust-lang/crates.io-index",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "rust-cargo-lock-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "rust"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "rust-crate"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "rust-cargo-lock-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:serde:serde:1.0.190:*:*:*:*:rust:*:*"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/Cargo.lock"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:cargo/serde_derive@1.0.190?package-id=339127215a83e280",
+      "type": "library",
+      "name": "serde_derive",
+      "version": "1.0.190",
+      "cpe": "cpe:2.3:a:serde_derive_project:serde-derive:1.0.190:*:*:*:*:rust:*:*",
+      "purl": "pkg:cargo/serde_derive@1.0.190",
+      "externalReferences": [
+        {
+          "url": "registry+https://github.com/rust-lang/crates.io-index",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "rust-cargo-lock-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "rust"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "rust-crate"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "rust-cargo-lock-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:serde_derive_project:serde_derive:1.0.190:*:*:*:*:rust:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:serde-derive:serde-derive:1.0.190:*:*:*:*:rust:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:serde-derive:serde_derive:1.0.190:*:*:*:*:rust:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:serde_derive:serde-derive:1.0.190:*:*:*:*:rust:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:serde_derive:serde_derive:1.0.190:*:*:*:*:rust:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:serde:serde-derive:1.0.190:*:*:*:*:rust:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:serde:serde_derive:1.0.190:*:*:*:*:rust:*:*"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/Cargo.lock"
+        }
+      ]
+    },
+    {
+      "bom-ref": "c6bea2c24af05bc1",
+      "type": "file",
+      "name": "cargo/Cargo.lock",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "df758add487e58b2c5457b120f531158bb96b89d"
+        },
+        {
+          "alg": "SHA-256",
+          "content": "8e2de07cf4632c9e09df9a44ad97ce9a402b10ad168101805ca99a5ae79fd0e1"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "728030f2ab43f725",
+      "dependsOn": [
+        "pkg:cargo/serde@1.0.190?package-id=9981dc59cb3e1cb9"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/serde@1.0.190?package-id=9981dc59cb3e1cb9",
+      "dependsOn": [
+        "pkg:cargo/serde_derive@1.0.190?package-id=339127215a83e280"
+      ]
+    }
+  ]
+}
