@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 )
@@ -308,8 +309,8 @@ func (s *SBOM) ClassifyScope() map[string]string {
 	return out
 }
 
-// Roots returns the IDs ClassifyScope treats as roots, and whether they are
-// declared by the document rather than inferred from the graph. Declared
+// Roots returns the IDs ClassifyScope treats as roots, and whether all of
+// them are declared by the document rather than inferred from the graph. Declared
 // roots are the project; inferred ones may be top-level dependencies of a
 // lock file that leaves the project out. It returns nil for a flat-list SBOM.
 func (s *SBOM) Roots() (ids []string, declared bool) {
@@ -327,7 +328,7 @@ func (s *SBOM) Roots() (ids []string, declared bool) {
 
 // scopeRoots returns the root set for ClassifyScope, nil when there is no
 // graph, the inferred roots that are top-level dependencies instead (see
-// topLevelDependencies), and whether the roots are declared.
+// topLevelDependencies), and whether every root is declared.
 func (s *SBOM) scopeRoots() (roots, top map[string]bool, declared bool) {
 	targets := map[string]bool{}
 	sources := map[string]bool{}
@@ -365,13 +366,14 @@ func (s *SBOM) scopeRoots() (roots, top map[string]bool, declared bool) {
 		}
 	}
 	top = s.topLevelDependencies(inferred)
-	roots = declaredRoots
+	roots = maps.Clone(declaredRoots)
 	for id := range inferred {
 		if !top[id] {
 			roots[id] = true
 		}
 	}
-	return roots, top, false
+	declared = len(roots) > 0 && len(roots) == len(declaredRoots)
+	return roots, top, declared
 }
 
 func (s *SBOM) addPackage(p Package) {

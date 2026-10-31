@@ -173,6 +173,29 @@ func TestClassifyScopeDeclaredRoot(t *testing.T) {
 			t.Errorf("Roots() = %v, want [dir requests]", ids)
 		}
 	})
+	t.Run("spdx DESCRIBES target without edges is a declared root", func(t *testing.T) {
+		doc, err := Parse([]byte(`{
+			"spdxVersion": "SPDX-2.3",
+			"SPDXID": "SPDXRef-DOCUMENT",
+			"packages": [{"SPDXID": "SPDXRef-app", "name": "app"}],
+			"relationships": [{"spdxElementId": "SPDXRef-DOCUMENT", "relationshipType": "DESCRIBES", "relatedSpdxElement": "SPDXRef-app"}]
+		}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ids, declared := doc.Roots(); !declared || !slices.Equal(ids, []string{"SPDXRef-app"}) {
+			t.Errorf("Roots() = %v, %v; want [SPDXRef-app], true", ids, declared)
+		}
+	})
+	t.Run("declared root without edges and inferred roots is not declared", func(t *testing.T) {
+		s := &SBOM{Relationships: []Relationship{
+			{SourceID: "SPDXRef-DOCUMENT", TargetID: "app", Type: RelDescribes},
+			{SourceID: "lib", TargetID: "dep", Type: RelDependsOn},
+		}}
+		if ids, declared := s.Roots(); declared || !slices.Equal(ids, []string{"app", "lib"}) {
+			t.Errorf("Roots() = %v, %v; want [app lib], false", ids, declared)
+		}
+	})
 	t.Run("no graph", func(t *testing.T) {
 		s := &SBOM{Document: Document{Component: Component{ID: "project"}}}
 		if got := s.ClassifyScope(); got != nil {
@@ -236,30 +259,33 @@ func TestClassifyScopeCycloneDXMetadataComponent(t *testing.T) {
 // Cargo.lock, uv.lock, yarn berry) give it a node of its own; the others
 // list only dependencies.
 func TestClassifyScopeSyftLockFiles(t *testing.T) {
+	// Lock files that name the project add it as an inferred root; for the
+	// others only the declared directory remains, so the roots are declared.
 	tests := []struct {
-		file  string
-		want  map[string]string
-		roots []string
+		file     string
+		want     map[string]string
+		roots    []string
+		declared bool
 	}{
-		{"npm", map[string]string{"express": ScopeDirect, "accepts": ScopeTransitive}, []string{"", "app"}},
-		{"cargo", map[string]string{"serde": ScopeDirect, "serde_derive": ScopeTransitive}, []string{"", "app"}},
-		{"uv", map[string]string{"requests": ScopeDirect, "urllib3": ScopeTransitive}, []string{"", "app"}},
-		{"berry", map[string]string{"express": ScopeDirect, "accepts": ScopeTransitive}, []string{"", "app"}},
-		{"poetry", map[string]string{"requests": ScopeDirect, "urllib3": ScopeTransitive}, []string{""}},
-		{"pdm", map[string]string{"requests": ScopeDirect, "urllib3": ScopeTransitive}, []string{""}},
-		{"pnpm9", map[string]string{"express": ScopeDirect, "accepts": ScopeTransitive}, []string{""}},
-		{"yarn", map[string]string{"express": ScopeDirect, "accepts": ScopeTransitive}, []string{""}},
+		{"npm", map[string]string{"express": ScopeDirect, "accepts": ScopeTransitive}, []string{"", "app"}, false},
+		{"cargo", map[string]string{"serde": ScopeDirect, "serde_derive": ScopeTransitive}, []string{"", "app"}, false},
+		{"uv", map[string]string{"requests": ScopeDirect, "urllib3": ScopeTransitive}, []string{"", "app"}, false},
+		{"berry", map[string]string{"express": ScopeDirect, "accepts": ScopeTransitive}, []string{"", "app"}, false},
+		{"poetry", map[string]string{"requests": ScopeDirect, "urllib3": ScopeTransitive}, []string{""}, true},
+		{"pdm", map[string]string{"requests": ScopeDirect, "urllib3": ScopeTransitive}, []string{""}, true},
+		{"pnpm9", map[string]string{"express": ScopeDirect, "accepts": ScopeTransitive}, []string{""}, true},
+		{"yarn", map[string]string{"express": ScopeDirect, "accepts": ScopeTransitive}, []string{""}, true},
 	}
 	for _, tt := range tests {
 		for _, format := range []string{"cyclonedx/syft-lock/%s.cdx.json", "spdx/syft-lock/%s.spdx.json"} {
 			t.Run(fmt.Sprintf(format, tt.file), func(t *testing.T) {
-				testSyftLockScope(t, filepath.Join("testdata", fmt.Sprintf(format, tt.file)), tt.want, tt.roots)
+				testSyftLockScope(t, filepath.Join("testdata", fmt.Sprintf(format, tt.file)), tt.want, tt.roots, tt.declared)
 			})
 		}
 	}
 }
 
-func testSyftLockScope(t *testing.T, file string, want map[string]string, wantRoots []string) {
+func testSyftLockScope(t *testing.T, file string, want map[string]string, wantRoots []string, wantDeclared bool) {
 	t.Helper()
 	data, err := os.ReadFile(file)
 	if err != nil {
@@ -292,7 +318,7 @@ func testSyftLockScope(t *testing.T, file string, want map[string]string, wantRo
 		roots = append(roots, names[id])
 	}
 	slices.Sort(roots)
-	if declared || !slices.Equal(roots, wantRoots) {
-		t.Errorf("Roots() = %v, %v; want %v, false", roots, declared, wantRoots)
+	if declared != wantDeclared || !slices.Equal(roots, wantRoots) {
+		t.Errorf("Roots() = %v, %v; want %v, %v", roots, declared, wantRoots, wantDeclared)
 	}
 }
