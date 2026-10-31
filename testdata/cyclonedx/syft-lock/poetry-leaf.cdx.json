@@ -1,0 +1,183 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-10-30T00:00:00Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "author": "anchore",
+          "name": "syft",
+          "version": "1.55.0"
+        }
+      ]
+    },
+    "component": {
+      "bom-ref": "342cf4438b70b22f",
+      "type": "file",
+      "name": "poetry-leaf"
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:pypi/idna@3.7?package-id=ffe8cf1585aac85a",
+      "type": "library",
+      "name": "idna",
+      "version": "3.7",
+      "cpe": "cpe:2.3:a:kjd:internationalized_domain_names_in_applications:3.7:*:*:*:*:python:*:*",
+      "purl": "pkg:pypi/idna@3.7",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "python-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "python-poetry-lock-entry"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/poetry.lock"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/requests@2.32.3?package-id=92c78c0f7c6326dd",
+      "type": "library",
+      "name": "requests",
+      "version": "2.32.3",
+      "cpe": "cpe:2.3:a:python:requests:2.32.3:*:*:*:*:*:*:*",
+      "purl": "pkg:pypi/requests@2.32.3",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "python-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "python-poetry-lock-entry"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/poetry.lock"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/six@1.16.0?package-id=7ce49a5bde83f07c",
+      "type": "library",
+      "name": "six",
+      "version": "1.16.0",
+      "cpe": "cpe:2.3:a:python-six:python-six:1.16.0:*:*:*:*:*:*:*",
+      "purl": "pkg:pypi/six@1.16.0",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "python-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "python-poetry-lock-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python-six:python_six:1.16.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python_six:python-six:1.16.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python_six:python_six:1.16.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python:python-six:1.16.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python:python_six:1.16.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python-six:six:1.16.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python_six:six:1.16.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:six:python-six:1.16.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:six:python_six:1.16.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python:six:1.16.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:six:six:1.16.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/poetry.lock"
+        }
+      ]
+    },
+    {
+      "bom-ref": "4490038dd0eaaf1f",
+      "type": "file",
+      "name": "/private/tmp/claude-501/-Users-simon-src/147bd043-24c3-4ed4-9982-87ee6ebb9459/scratchpad/syft-fixtures/poetry-leaf/poetry.lock",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "b68ffd690ea026643192341835a28bafc6797bb6"
+        },
+        {
+          "alg": "SHA-256",
+          "content": "e29fca892195c674b27d379957a259df1e796dcbefa25cc251b6f3e9270f70c2"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:pypi/requests@2.32.3?package-id=92c78c0f7c6326dd",
+      "dependsOn": [
+        "pkg:pypi/idna@3.7?package-id=ffe8cf1585aac85a"
+      ]
+    }
+  ]
+}

@@ -275,6 +275,9 @@ func TestClassifyScopeSyftLockFiles(t *testing.T) {
 		{"pdm", map[string]string{"requests": ScopeDirect, "urllib3": ScopeTransitive}, []string{""}, true},
 		{"pnpm9", map[string]string{"express": ScopeDirect, "accepts": ScopeTransitive}, []string{""}, true},
 		{"yarn", map[string]string{"express": ScopeDirect, "accepts": ScopeTransitive}, []string{""}, true},
+		// six has no dependencies and nothing depends on it, so no edge
+		// names it; from a lock file without the project it is direct.
+		{"poetry-leaf", map[string]string{"requests": ScopeDirect, "idna": ScopeTransitive, "six": ScopeDirect}, []string{""}, true},
 	}
 	for _, tt := range tests {
 		for _, format := range []string{"cyclonedx/syft-lock/%s.cdx.json", "spdx/syft-lock/%s.spdx.json"} {
@@ -320,5 +323,27 @@ func testSyftLockScope(t *testing.T, file string, want map[string]string, wantRo
 	slices.Sort(roots)
 	if declared != wantDeclared || !slices.Equal(roots, wantRoots) {
 		t.Errorf("Roots() = %v, %v; want %v, %v", roots, declared, wantRoots, wantDeclared)
+	}
+}
+
+// TestClassifyScopeLockFileWithoutEdges checks that packages of a lock file
+// the graph has no edges for stay unclassified, even though no edge names
+// them, while another lock file has edges.
+func TestClassifyScopeLockFileWithoutEdges(t *testing.T) {
+	from := func(id, name, lock string) Package {
+		return Package{ID: id, Name: name, Properties: []Property{{Name: syftLocationPath, Value: lock}}}
+	}
+	s := &SBOM{
+		Packages: []Package{
+			from("app", "app", "/web/package-lock.json"),
+			from("express", "express", "/web/package-lock.json"),
+			from("requests", "requests", "/py/poetry.lock"),
+			from("idna", "idna", "/py/poetry.lock"),
+		},
+		Relationships: []Relationship{{SourceID: "app", TargetID: "express", Type: RelDependsOn}},
+	}
+	want := map[string]string{"express": ScopeDirect}
+	if got := s.ClassifyScope(); !maps.Equal(got, want) {
+		t.Errorf("scope = %v, want %v", got, want)
 	}
 }

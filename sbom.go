@@ -276,6 +276,8 @@ func (s *SBOM) FilterProperties(keep func(name string) bool) {
 // inferred as roots, except for packages syft records as coming from such a
 // lock file (poetry.lock, pdm.lock, pnpm-lock.yaml and yarn v1's yarn.lock):
 // those are ScopeDirect themselves, and what they depend on is transitive.
+// So is a package from such a lock file that no edge names, when other
+// packages of the lock file have edges.
 //
 // Returns nil for a flat-list SBOM with no dependency graph so callers can
 // tell "no graph" apart from "graph present but this package is a root".
@@ -365,7 +367,9 @@ func (s *SBOM) scopeRoots() (roots, top map[string]bool, declared bool) {
 			inferred[id] = true
 		}
 	}
-	top = s.topLevelDependencies(inferred)
+	edged := maps.Clone(sources)
+	maps.Copy(edged, targets)
+	top = s.topLevelDependencies(inferred, edged)
 	roots = maps.Clone(declaredRoots)
 	for id := range inferred {
 		if !top[id] {

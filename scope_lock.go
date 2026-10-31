@@ -40,18 +40,28 @@ func (p *Package) lockFile() string {
 	return ""
 }
 
-// topLevelDependencies returns the IDs among candidates that are packages
-// from a lock file that leaves the project out, so are dependencies of the
-// project rather than the project itself.
-func (s *SBOM) topLevelDependencies(candidates map[string]bool) map[string]bool {
+// topLevelDependencies returns the IDs of packages from a lock file that
+// leaves the project out which nothing depends on, so are dependencies of
+// the project rather than the project itself: the inferred roots among them,
+// and those without any edge, such as a dependency that has none of its own.
+// A package without edges counts only when other packages of its lock file
+// have edges, so a lock file the graph leaves out stays unclassified.
+// edged holds the IDs that are the source or target of a DEPENDS_ON edge.
+func (s *SBOM) topLevelDependencies(inferred, edged map[string]bool) map[string]bool {
 	var berryLocks map[string]bool
+	lockHasEdges := map[string]bool{}
+	for i := range s.Packages {
+		if p := &s.Packages[i]; edged[p.ID] {
+			lockHasEdges[p.lockFile()] = true
+		}
+	}
 	var top map[string]bool
 	for i := range s.Packages {
 		p := &s.Packages[i]
-		if !candidates[p.ID] {
+		lock := p.lockFile()
+		if !inferred[p.ID] && (edged[p.ID] || !lockHasEdges[lock]) {
 			continue
 		}
-		lock := p.lockFile()
 		name := path.Base(lock)
 		if lock == "" || !projectlessLockFiles[name] {
 			continue
