@@ -67,7 +67,8 @@ func buildCycloneDX(s *SBOM) *cdxBOM {
 	}
 	if c := s.Document.Component; c.Name != "" {
 		bom.Metadata.Component = &cdxComponent{
-			Type: firstNonEmpty(c.Type, "application"), Name: c.Name, Version: c.Version,
+			BOMRef: c.ID,
+			Type:   firstNonEmpty(c.Type, "application"), Name: c.Name, Version: c.Version,
 			Licenses: componentLicensesToCDX(c),
 		}
 	}

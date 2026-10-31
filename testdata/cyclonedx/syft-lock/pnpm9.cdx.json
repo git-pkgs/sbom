@@ -1,0 +1,109 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-10-30T00:00:00Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "author": "anchore",
+          "name": "syft",
+          "version": "1.55.0"
+        }
+      ]
+    },
+    "component": {
+      "bom-ref": "7a911b482d938b9b",
+      "type": "file",
+      "name": "pnpm9"
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:npm/accepts@1.3.8?package-id=67cae3e45f56cc09",
+      "type": "library",
+      "name": "accepts",
+      "version": "1.3.8",
+      "cpe": "cpe:2.3:a:accepts:accepts:1.3.8:*:*:*:*:*:*:*",
+      "purl": "pkg:npm/accepts@1.3.8",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "javascript-lock-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "javascript"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "npm"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "javascript-pnpm-lock-entry"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/pnpm-lock.yaml"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/express@4.18.2?package-id=4edbc0b4eb81a972",
+      "type": "library",
+      "name": "express",
+      "version": "4.18.2",
+      "cpe": "cpe:2.3:a:openjsf:express:4.18.2:*:*:*:*:node.js:*:*",
+      "purl": "pkg:npm/express@4.18.2",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "javascript-lock-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "javascript"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "npm"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "javascript-pnpm-lock-entry"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/pnpm-lock.yaml"
+        }
+      ]
+    },
+    {
+      "bom-ref": "c895fb8e872e275f",
+      "type": "file",
+      "name": "pnpm9/pnpm-lock.yaml",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "3e78d60ae2bd41cbc94df2aff5c2d07f3413e1e8"
+        },
+        {
+          "alg": "SHA-256",
+          "content": "c793289aec36b1e18cf298c774e621991c3810ad6c263c65adaa3aba281e2554"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/express@4.18.2?package-id=4edbc0b4eb81a972",
+      "dependsOn": [
+        "pkg:npm/accepts@1.3.8?package-id=67cae3e45f56cc09"
+      ]
+    }
+  ]
+}

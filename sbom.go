@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 )
@@ -61,8 +62,11 @@ type Creator struct {
 }
 
 // Component is the root subject the SBOM describes (CycloneDX
-// metadata.component / SPDX root package).
+// metadata.component / SPDX root package). ID is its CycloneDX bom-ref, the
+// identifier dependency edges from the root use; it is empty when the
+// document gives none.
 type Component struct {
+	ID                string
 	Type              string
 	Name              string
 	Version           string
@@ -117,6 +121,9 @@ type Package struct {
 	Homepage         string
 	DownloadLocation string
 	Filename         string
+	// SourceInfo is SPDX's free-text note on where the package information
+	// came from (PackageSourceInfo).
+	SourceInfo       string
 	LicenseConcluded string
 	LicenseDeclared  string
 	Copyright        string
@@ -162,12 +169,15 @@ func (p *Package) CPE() string {
 }
 
 // Relationship type values. SPDX has ~40 of these; we name the two the
-// parsers emit and ClassifyScope reads. CycloneDX dependency edges are
-// normalised to RelDependsOn.
+// parsers emit and ClassifyScope reads. CycloneDX dependency edges and
+// SPDX DEPENDENCY_OF edges are normalised to RelDependsOn.
 const (
 	RelDependsOn = "DEPENDS_ON"
 	RelDescribes = "DESCRIBES"
 )
+
+// spdxDependencyOf is the SPDX inverse of DEPENDS_ON, which syft emits.
+const spdxDependencyOf = "DEPENDENCY_OF"
 
 // Scope values returned by ClassifyScope.
 const (
@@ -252,39 +262,38 @@ func (s *SBOM) FilterProperties(keep func(name string) bool) {
 }
 
 // ClassifyScope derives direct-vs-transitive scope for each package from
-// the relationship graph. Roots are nodes that originate DEPENDS_ON edges
-// but are never themselves a DEPENDS_ON target, plus anything a DESCRIBES
-// edge points at (SPDX's document-to-root-package link). A package is
-// ScopeDirect if a root depends on it, ScopeTransitive if only a non-root
-// does, and absent from the map if the graph doesn't mention it at all.
+// the relationship graph. A package is ScopeDirect if a root depends on it,
+// ScopeTransitive if only a non-root does, and absent from the map if the
+// graph doesn't mention it at all.
+//
+// When the document declares its root, as the target of a DESCRIBES edge
+// (SPDX's document-to-root-package link) or as Document.Component.ID (the
+// CycloneDX metadata.component bom-ref), and that root has DEPENDS_ON edges,
+// the declared roots are the only roots. Otherwise roots are inferred: nodes
+// that originate DEPENDS_ON edges but are never a DEPENDS_ON target, plus any
+// declared root. An inferred root is not necessarily the project: for a lock
+// file that doesn't list the project itself the top-level dependencies are
+// inferred as roots, except for packages syft records as coming from such a
+// lock file (poetry.lock, pdm.lock, pnpm-lock.yaml and yarn v1's yarn.lock):
+// those are ScopeDirect themselves, and what they depend on is transitive.
+// So is a package from such a lock file that no edge names, when other
+// packages of the lock file have edges.
+//
 // Returns nil for a flat-list SBOM with no dependency graph so callers can
 // tell "no graph" apart from "graph present but this package is a root".
 func (s *SBOM) ClassifyScope() map[string]string {
-	targets := map[string]bool{}
-	sources := map[string]bool{}
-	roots := map[string]bool{}
-	for _, r := range s.Relationships {
-		switch r.Type {
-		case RelDependsOn:
-			sources[r.SourceID] = true
-			targets[r.TargetID] = true
-		case RelDescribes:
-			roots[r.TargetID] = true
-		}
-	}
-	if len(sources) == 0 && len(roots) == 0 {
+	roots, top, _ := s.scopeRoots()
+	if roots == nil {
 		// No DEPENDS_ON or DESCRIBES edges: a flat-list SBOM. nil (as
 		// distinct from empty) lets callers hide scope entirely.
 		return nil
 	}
-	for id := range sources {
-		if !targets[id] {
-			roots[id] = true
-		}
-	}
 	out := map[string]string{}
-	if len(roots) == 0 {
-		// Edges exist but form a cycle with no DESCRIBES root: nothing
+	for id := range top {
+		out[id] = ScopeDirect
+	}
+	if len(roots) == 0 && len(top) == 0 {
+		// Edges exist but form a cycle with no declared root: nothing
 		// is classifiable, but the graph is present, so return empty
 		// rather than nil.
 		return out
@@ -300,6 +309,75 @@ func (s *SBOM) ClassifyScope() map[string]string {
 		}
 	}
 	return out
+}
+
+// Roots returns the IDs ClassifyScope treats as roots, and whether all of
+// them are declared by the document rather than inferred from the graph. Declared
+// roots are the project; inferred ones may be top-level dependencies of a
+// lock file that leaves the project out. It returns nil for a flat-list SBOM.
+func (s *SBOM) Roots() (ids []string, declared bool) {
+	roots, _, declared := s.scopeRoots()
+	if roots == nil {
+		return nil, false
+	}
+	ids = make([]string, 0, len(roots))
+	for id := range roots {
+		ids = append(ids, id)
+	}
+	slices.Sort(ids)
+	return ids, declared
+}
+
+// scopeRoots returns the root set for ClassifyScope, nil when there is no
+// graph, the inferred roots that are top-level dependencies instead (see
+// topLevelDependencies), and whether every root is declared.
+func (s *SBOM) scopeRoots() (roots, top map[string]bool, declared bool) {
+	targets := map[string]bool{}
+	sources := map[string]bool{}
+	declaredRoots := map[string]bool{}
+	for _, r := range s.Relationships {
+		switch r.Type {
+		case RelDependsOn:
+			sources[r.SourceID] = true
+			targets[r.TargetID] = true
+		case RelDescribes:
+			declaredRoots[r.TargetID] = true
+		}
+	}
+	if len(sources) == 0 && len(declaredRoots) == 0 {
+		return nil, nil, false
+	}
+	if id := s.Document.Component.ID; id != "" {
+		declaredRoots[id] = true
+	}
+	// A declared root with edges of its own names the project's direct
+	// dependencies, so nothing needs inferring.
+	linked := map[string]bool{}
+	for id := range declaredRoots {
+		if sources[id] {
+			linked[id] = true
+		}
+	}
+	if len(linked) > 0 {
+		return linked, nil, true
+	}
+	inferred := map[string]bool{}
+	for id := range sources {
+		if !targets[id] {
+			inferred[id] = true
+		}
+	}
+	edged := maps.Clone(sources)
+	maps.Copy(edged, targets)
+	top = s.topLevelDependencies(inferred, edged)
+	roots = maps.Clone(declaredRoots)
+	for id := range inferred {
+		if !top[id] {
+			roots[id] = true
+		}
+	}
+	declared = len(roots) > 0 && len(roots) == len(declaredRoots)
+	return roots, top, declared
 }
 
 func (s *SBOM) addPackage(p Package) {
