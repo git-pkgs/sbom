@@ -49,6 +49,7 @@ type spdxPackage struct {
 	Supplier              string         `json:"supplier,omitempty"`
 	Originator            string         `json:"originator,omitempty"`
 	PrimaryPackagePurpose string         `json:"primaryPackagePurpose,omitempty"`
+	SourceInfo            string         `json:"sourceInfo,omitempty"`
 	Checksums             []spdxChecksum `json:"checksums,omitempty"`
 	ExternalRefs          []spdxExtRef   `json:"externalRefs,omitempty"`
 }
@@ -118,6 +119,7 @@ func normalizeSPDX(doc *spdxDoc) *SBOM {
 			Homepage:         sp.Homepage,
 			DownloadLocation: sp.DownloadLocation,
 			Filename:         sp.PackageFileName,
+			SourceInfo:       sp.SourceInfo,
 			LicenseConcluded: sp.LicenseConcluded,
 			LicenseDeclared:  sp.LicenseDeclared,
 			Copyright:        sp.CopyrightText,
@@ -148,12 +150,17 @@ func normalizeSPDX(doc *spdxDoc) *SBOM {
 
 	for i := range doc.Relationships {
 		r := &doc.Relationships[i]
+		source, target, typ := r.SPDXElementID, r.RelatedSPDXElement, r.RelationshipType
+		if typ == spdxDependencyOf {
+			// "B DEPENDENCY_OF A" is "A DEPENDS_ON B".
+			source, target, typ = target, source, RelDependsOn
+		}
 		s.Relationships = append(s.Relationships, Relationship{
-			SourceID: r.SPDXElementID,
-			Source:   elements[r.SPDXElementID],
-			TargetID: r.RelatedSPDXElement,
-			Target:   elements[r.RelatedSPDXElement],
-			Type:     r.RelationshipType,
+			SourceID: source,
+			Source:   elements[source],
+			TargetID: target,
+			Target:   elements[target],
+			Type:     typ,
 		})
 	}
 

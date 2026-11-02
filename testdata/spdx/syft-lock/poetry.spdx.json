@@ -1,0 +1,134 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "poetry",
+  "documentNamespace": "https://anchore.com/syft/dir/poetry",
+  "creationInfo": {
+    "licenseListVersion": "3.29",
+    "creators": [
+      "Organization: Anchore, Inc",
+      "Tool: syft-1.55.0"
+    ],
+    "created": "2026-10-30T00:00:00Z"
+  },
+  "packages": [
+    {
+      "name": "requests",
+      "SPDXID": "SPDXRef-Package-python-requests-9082330c5423f680",
+      "versionInfo": "2.31.0",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from installed python package manifest file: /poetry.lock",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python:requests:2.31.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/requests@2.31.0"
+        }
+      ]
+    },
+    {
+      "name": "urllib3",
+      "SPDXID": "SPDXRef-Package-python-urllib3-9d0487ec0b086dd6",
+      "versionInfo": "2.1.0",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from installed python package manifest file: /poetry.lock",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python:urllib3:2.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/urllib3@2.1.0"
+        }
+      ]
+    },
+    {
+      "name": "poetry",
+      "SPDXID": "SPDXRef-DocumentRoot-Directory-poetry",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "FILE"
+    }
+  ],
+  "files": [
+    {
+      "fileName": "poetry.lock",
+      "SPDXID": "SPDXRef-File-poetry.lock-4490038dd0eaaf1f",
+      "fileTypes": [
+        "TEXT"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "17cac89e54b2bb92a8f9211b5581c1ce22b0dfd3"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "83c06cc1183481c13578217219eb22f778efd9e82d7b58e8c9d9302aa36f8467"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-python-urllib3-9d0487ec0b086dd6",
+      "relatedSpdxElement": "SPDXRef-Package-python-requests-9082330c5423f680",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-python-requests-9082330c5423f680",
+      "relatedSpdxElement": "SPDXRef-File-poetry.lock-4490038dd0eaaf1f",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-python-urllib3-9d0487ec0b086dd6",
+      "relatedSpdxElement": "SPDXRef-File-poetry.lock-4490038dd0eaaf1f",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-poetry",
+      "relatedSpdxElement": "SPDXRef-Package-python-requests-9082330c5423f680",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-poetry",
+      "relatedSpdxElement": "SPDXRef-Package-python-urllib3-9d0487ec0b086dd6",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relatedSpdxElement": "SPDXRef-DocumentRoot-Directory-poetry",
+      "relationshipType": "DESCRIBES"
+    }
+  ]
+}

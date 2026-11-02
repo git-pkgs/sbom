@@ -1,0 +1,109 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-10-30T00:00:00Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "author": "anchore",
+          "name": "syft",
+          "version": "1.55.0"
+        }
+      ]
+    },
+    "component": {
+      "bom-ref": "3e4c549a49d8fe16",
+      "type": "file",
+      "name": "poetry"
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:pypi/requests@2.31.0?package-id=9082330c5423f680",
+      "type": "library",
+      "name": "requests",
+      "version": "2.31.0",
+      "cpe": "cpe:2.3:a:python:requests:2.31.0:*:*:*:*:*:*:*",
+      "purl": "pkg:pypi/requests@2.31.0",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "python-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "python-poetry-lock-entry"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/poetry.lock"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/urllib3@2.1.0?package-id=9d0487ec0b086dd6",
+      "type": "library",
+      "name": "urllib3",
+      "version": "2.1.0",
+      "cpe": "cpe:2.3:a:python:urllib3:2.1.0:*:*:*:*:*:*:*",
+      "purl": "pkg:pypi/urllib3@2.1.0",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "python-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "python-poetry-lock-entry"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/poetry.lock"
+        }
+      ]
+    },
+    {
+      "bom-ref": "4490038dd0eaaf1f",
+      "type": "file",
+      "name": "poetry/poetry.lock",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "17cac89e54b2bb92a8f9211b5581c1ce22b0dfd3"
+        },
+        {
+          "alg": "SHA-256",
+          "content": "83c06cc1183481c13578217219eb22f778efd9e82d7b58e8c9d9302aa36f8467"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:pypi/requests@2.31.0?package-id=9082330c5423f680",
+      "dependsOn": [
+        "pkg:pypi/urllib3@2.1.0?package-id=9d0487ec0b086dd6"
+      ]
+    }
+  ]
+}

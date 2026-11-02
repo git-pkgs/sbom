@@ -1,0 +1,229 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "uv",
+  "documentNamespace": "https://anchore.com/syft/dir/uv",
+  "creationInfo": {
+    "licenseListVersion": "3.29",
+    "creators": [
+      "Organization: Anchore, Inc",
+      "Tool: syft-1.55.0"
+    ],
+    "created": "2026-10-30T00:00:00Z"
+  },
+  "packages": [
+    {
+      "name": "app",
+      "SPDXID": "SPDXRef-Package-python-app-6e016116bed81381",
+      "versionInfo": "0.1.0",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from installed python package manifest file: /uv.lock",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python-app:python-app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python-app:python_app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python_app:python-app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python_app:python_app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python:python-app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python:python_app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:app:python-app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:app:python_app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python-app:app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python_app:app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python:app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:app:app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/app@0.1.0"
+        }
+      ]
+    },
+    {
+      "name": "requests",
+      "SPDXID": "SPDXRef-Package-python-requests-2afe8646f430114f",
+      "versionInfo": "2.31.0",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from installed python package manifest file: /uv.lock",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python:requests:2.31.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/requests@2.31.0"
+        }
+      ]
+    },
+    {
+      "name": "urllib3",
+      "SPDXID": "SPDXRef-Package-python-urllib3-075fcf4a5d5325d1",
+      "versionInfo": "2.1.0",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from installed python package manifest file: /uv.lock",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:python:urllib3:2.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/urllib3@2.1.0"
+        }
+      ]
+    },
+    {
+      "name": "uv",
+      "SPDXID": "SPDXRef-DocumentRoot-Directory-uv",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "FILE"
+    }
+  ],
+  "files": [
+    {
+      "fileName": "uv.lock",
+      "SPDXID": "SPDXRef-File-uv.lock-3717ae13dd3eb744",
+      "fileTypes": [
+        "TEXT"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "b5474082928bfe15e3e51b6ac6a4c30c168cfbb0"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b8cb9de778427354ad5ed9e75092034fde14bcc9a009edd2770537a75c59fd6f"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-python-urllib3-075fcf4a5d5325d1",
+      "relatedSpdxElement": "SPDXRef-Package-python-requests-2afe8646f430114f",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-python-requests-2afe8646f430114f",
+      "relatedSpdxElement": "SPDXRef-Package-python-app-6e016116bed81381",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-python-urllib3-075fcf4a5d5325d1",
+      "relatedSpdxElement": "SPDXRef-File-uv.lock-3717ae13dd3eb744",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-python-requests-2afe8646f430114f",
+      "relatedSpdxElement": "SPDXRef-File-uv.lock-3717ae13dd3eb744",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-python-app-6e016116bed81381",
+      "relatedSpdxElement": "SPDXRef-File-uv.lock-3717ae13dd3eb744",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-uv",
+      "relatedSpdxElement": "SPDXRef-Package-python-app-6e016116bed81381",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-uv",
+      "relatedSpdxElement": "SPDXRef-Package-python-requests-2afe8646f430114f",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-uv",
+      "relatedSpdxElement": "SPDXRef-Package-python-urllib3-075fcf4a5d5325d1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relatedSpdxElement": "SPDXRef-DocumentRoot-Directory-uv",
+      "relationshipType": "DESCRIBES"
+    }
+  ]
+}

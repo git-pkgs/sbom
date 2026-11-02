@@ -294,6 +294,7 @@ func normalizeCycloneDX(bom *cdxBOM) *SBOM {
 		if m.Component != nil {
 			s.Document.Name = m.Component.Name
 			s.Document.Component = Component{
+				ID:      m.Component.BOMRef,
 				Type:    m.Component.Type,
 				Name:    m.Component.Name,
 				Version: m.Component.Version,

@@ -1,0 +1,214 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "cargo",
+  "documentNamespace": "https://anchore.com/syft/dir/cargo",
+  "creationInfo": {
+    "licenseListVersion": "3.29",
+    "creators": [
+      "Organization: Anchore, Inc",
+      "Tool: syft-1.55.0"
+    ],
+    "created": "2026-10-30T00:00:00Z"
+  },
+  "packages": [
+    {
+      "name": "app",
+      "SPDXID": "SPDXRef-Package-rust-crate-app-728030f2ab43f725",
+      "versionInfo": "0.1.0",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from rust cargo manifest: /Cargo.lock",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:app_project:app:0.1.0:*:*:*:*:rust:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:app:app:0.1.0:*:*:*:*:rust:*:*"
+        }
+      ]
+    },
+    {
+      "name": "serde",
+      "SPDXID": "SPDXRef-Package-rust-crate-serde-9981dc59cb3e1cb9",
+      "versionInfo": "1.0.190",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from rust cargo manifest: /Cargo.lock",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:serde_project:serde:1.0.190:*:*:*:*:rust:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:serde:serde:1.0.190:*:*:*:*:rust:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:cargo/serde@1.0.190"
+        }
+      ]
+    },
+    {
+      "name": "serde_derive",
+      "SPDXID": "SPDXRef-Package-rust-crate-serde-derive-339127215a83e280",
+      "versionInfo": "1.0.190",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from rust cargo manifest: /Cargo.lock",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:serde_derive_project:serde-derive:1.0.190:*:*:*:*:rust:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:serde_derive_project:serde_derive:1.0.190:*:*:*:*:rust:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:serde-derive:serde-derive:1.0.190:*:*:*:*:rust:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:serde-derive:serde_derive:1.0.190:*:*:*:*:rust:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:serde_derive:serde-derive:1.0.190:*:*:*:*:rust:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:serde_derive:serde_derive:1.0.190:*:*:*:*:rust:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:serde:serde-derive:1.0.190:*:*:*:*:rust:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:serde:serde_derive:1.0.190:*:*:*:*:rust:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:cargo/serde_derive@1.0.190"
+        }
+      ]
+    },
+    {
+      "name": "cargo",
+      "SPDXID": "SPDXRef-DocumentRoot-Directory-cargo",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "FILE"
+    }
+  ],
+  "files": [
+    {
+      "fileName": "Cargo.lock",
+      "SPDXID": "SPDXRef-File-Cargo.lock-c6bea2c24af05bc1",
+      "fileTypes": [
+        "TEXT"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "df758add487e58b2c5457b120f531158bb96b89d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8e2de07cf4632c9e09df9a44ad97ce9a402b10ad168101805ca99a5ae79fd0e1"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-rust-crate-serde-derive-339127215a83e280",
+      "relatedSpdxElement": "SPDXRef-Package-rust-crate-serde-9981dc59cb3e1cb9",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-rust-crate-serde-9981dc59cb3e1cb9",
+      "relatedSpdxElement": "SPDXRef-Package-rust-crate-app-728030f2ab43f725",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-rust-crate-serde-derive-339127215a83e280",
+      "relatedSpdxElement": "SPDXRef-File-Cargo.lock-c6bea2c24af05bc1",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-rust-crate-app-728030f2ab43f725",
+      "relatedSpdxElement": "SPDXRef-File-Cargo.lock-c6bea2c24af05bc1",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-rust-crate-serde-9981dc59cb3e1cb9",
+      "relatedSpdxElement": "SPDXRef-File-Cargo.lock-c6bea2c24af05bc1",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-cargo",
+      "relatedSpdxElement": "SPDXRef-Package-rust-crate-app-728030f2ab43f725",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-cargo",
+      "relatedSpdxElement": "SPDXRef-Package-rust-crate-serde-9981dc59cb3e1cb9",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-cargo",
+      "relatedSpdxElement": "SPDXRef-Package-rust-crate-serde-derive-339127215a83e280",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relatedSpdxElement": "SPDXRef-DocumentRoot-Directory-cargo",
+      "relationshipType": "DESCRIBES"
+    }
+  ]
+}

@@ -1,0 +1,189 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-10-30T00:00:00Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "author": "anchore",
+          "name": "syft",
+          "version": "1.55.0"
+        }
+      ]
+    },
+    "component": {
+      "bom-ref": "08325307b4eb15a8",
+      "type": "file",
+      "name": "uv"
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:pypi/app@0.1.0?package-id=6e016116bed81381",
+      "type": "library",
+      "name": "app",
+      "version": "0.1.0",
+      "cpe": "cpe:2.3:a:python-app:python-app:0.1.0:*:*:*:*:*:*:*",
+      "purl": "pkg:pypi/app@0.1.0",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "python-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "python-uv-lock-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python-app:python_app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python_app:python-app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python_app:python_app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python:python-app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python:python_app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:app:python-app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:app:python_app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python-app:app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python_app:app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python:app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:app:app:0.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/uv.lock"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/requests@2.31.0?package-id=2afe8646f430114f",
+      "type": "library",
+      "name": "requests",
+      "version": "2.31.0",
+      "cpe": "cpe:2.3:a:python:requests:2.31.0:*:*:*:*:*:*:*",
+      "purl": "pkg:pypi/requests@2.31.0",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "python-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "python-uv-lock-entry"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/uv.lock"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/urllib3@2.1.0?package-id=075fcf4a5d5325d1",
+      "type": "library",
+      "name": "urllib3",
+      "version": "2.1.0",
+      "cpe": "cpe:2.3:a:python:urllib3:2.1.0:*:*:*:*:*:*:*",
+      "purl": "pkg:pypi/urllib3@2.1.0",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "python-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "python-uv-lock-entry"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/uv.lock"
+        }
+      ]
+    },
+    {
+      "bom-ref": "3717ae13dd3eb744",
+      "type": "file",
+      "name": "uv/uv.lock",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "b5474082928bfe15e3e51b6ac6a4c30c168cfbb0"
+        },
+        {
+          "alg": "SHA-256",
+          "content": "b8cb9de778427354ad5ed9e75092034fde14bcc9a009edd2770537a75c59fd6f"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:pypi/app@0.1.0?package-id=6e016116bed81381",
+      "dependsOn": [
+        "pkg:pypi/requests@2.31.0?package-id=2afe8646f430114f"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/requests@2.31.0?package-id=2afe8646f430114f",
+      "dependsOn": [
+        "pkg:pypi/urllib3@2.1.0?package-id=075fcf4a5d5325d1"
+      ]
+    }
+  ]
+}

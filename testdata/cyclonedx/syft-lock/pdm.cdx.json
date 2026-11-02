@@ -1,0 +1,109 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-10-30T00:00:00Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "author": "anchore",
+          "name": "syft",
+          "version": "1.55.0"
+        }
+      ]
+    },
+    "component": {
+      "bom-ref": "d8a9ce186b845ab6",
+      "type": "file",
+      "name": "pdm"
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:pypi/requests@2.31.0?package-id=d97d1ee1c7a2d435",
+      "type": "library",
+      "name": "requests",
+      "version": "2.31.0",
+      "cpe": "cpe:2.3:a:python:requests:2.31.0:*:*:*:*:*:*:*",
+      "purl": "pkg:pypi/requests@2.31.0",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "python-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "python-pdm-lock-entry"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/pdm.lock"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/urllib3@2.1.0?package-id=0479d648f8aa7541",
+      "type": "library",
+      "name": "urllib3",
+      "version": "2.1.0",
+      "cpe": "cpe:2.3:a:python:urllib3:2.1.0:*:*:*:*:*:*:*",
+      "purl": "pkg:pypi/urllib3@2.1.0",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "python-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "python-pdm-lock-entry"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/pdm.lock"
+        }
+      ]
+    },
+    {
+      "bom-ref": "2b9d7aa4cee17183",
+      "type": "file",
+      "name": "pdm/pdm.lock",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "6bf2a56cff65829ecf4f977a4317fddae2a2fa4f"
+        },
+        {
+          "alg": "SHA-256",
+          "content": "e7cb9f4512f9d1f2e047d4f4b8f28047f6ad0a3d5df7b647731a70cdd7d77d1b"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:pypi/requests@2.31.0?package-id=d97d1ee1c7a2d435",
+      "dependsOn": [
+        "pkg:pypi/urllib3@2.1.0?package-id=0479d648f8aa7541"
+      ]
+    }
+  ]
+}

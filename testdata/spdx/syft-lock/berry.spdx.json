@@ -1,0 +1,174 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "berry",
+  "documentNamespace": "https://anchore.com/syft/dir/berry",
+  "creationInfo": {
+    "licenseListVersion": "3.29",
+    "creators": [
+      "Organization: Anchore, Inc",
+      "Tool: syft-1.55.0"
+    ],
+    "created": "2026-10-30T00:00:00Z"
+  },
+  "packages": [
+    {
+      "name": "accepts",
+      "SPDXID": "SPDXRef-Package-npm-accepts-405ed17ac849bb64",
+      "versionInfo": "1.3.8",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from installed node module manifest file: /yarn.lock",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:accepts:accepts:1.3.8:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/accepts@1.3.8"
+        }
+      ]
+    },
+    {
+      "name": "app",
+      "SPDXID": "SPDXRef-Package-npm-app-0d57075a66eeffef",
+      "versionInfo": "0.0.0-use.local",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from installed node module manifest file: /yarn.lock",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:app:app:0.0.0-use.local:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/app@0.0.0-use.local"
+        }
+      ]
+    },
+    {
+      "name": "express",
+      "SPDXID": "SPDXRef-Package-npm-express-c0b33931be4c6bc1",
+      "versionInfo": "4.18.2",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from installed node module manifest file: /yarn.lock",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:openjsf:express:4.18.2:*:*:*:*:node.js:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/express@4.18.2"
+        }
+      ]
+    },
+    {
+      "name": "berry",
+      "SPDXID": "SPDXRef-DocumentRoot-Directory-berry",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "FILE"
+    }
+  ],
+  "files": [
+    {
+      "fileName": "yarn.lock",
+      "SPDXID": "SPDXRef-File-yarn.lock-dcee26e98fae7b36",
+      "fileTypes": [
+        "TEXT"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "25106461e83f05874e95ae1ff4354d48e8d90c05"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "391d34344bad7be85707d66eb6c3de76ba8f16d30f37490af7bdcb31c3b02d6d"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-npm-accepts-405ed17ac849bb64",
+      "relatedSpdxElement": "SPDXRef-Package-npm-express-c0b33931be4c6bc1",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-express-c0b33931be4c6bc1",
+      "relatedSpdxElement": "SPDXRef-Package-npm-app-0d57075a66eeffef",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-app-0d57075a66eeffef",
+      "relatedSpdxElement": "SPDXRef-File-yarn.lock-dcee26e98fae7b36",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-accepts-405ed17ac849bb64",
+      "relatedSpdxElement": "SPDXRef-File-yarn.lock-dcee26e98fae7b36",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-express-c0b33931be4c6bc1",
+      "relatedSpdxElement": "SPDXRef-File-yarn.lock-dcee26e98fae7b36",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-berry",
+      "relatedSpdxElement": "SPDXRef-Package-npm-accepts-405ed17ac849bb64",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-berry",
+      "relatedSpdxElement": "SPDXRef-Package-npm-app-0d57075a66eeffef",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-berry",
+      "relatedSpdxElement": "SPDXRef-Package-npm-express-c0b33931be4c6bc1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relatedSpdxElement": "SPDXRef-DocumentRoot-Directory-berry",
+      "relationshipType": "DESCRIBES"
+    }
+  ]
+}

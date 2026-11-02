@@ -1,6 +1,15 @@
 package sbom
 
-import "testing"
+import (
+	"bytes"
+	"fmt"
+	"maps"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
+	"testing"
+)
 
 func TestClassifyScope(t *testing.T) {
 	t.Run("cyclonedx graph", func(t *testing.T) {
@@ -101,4 +110,240 @@ func TestClassifyScope(t *testing.T) {
 			t.Errorf("expected empty map, got %v", got)
 		}
 	})
+}
+
+func TestClassifyScopeDeclaredRoot(t *testing.T) {
+	t.Run("cyclonedx component with edges is the only root", func(t *testing.T) {
+		// The project links requests; the stray lock entry orphan -> x is
+		// not a root once the project is declared.
+		s := &SBOM{
+			Document: Document{Component: Component{ID: "project"}},
+			Relationships: []Relationship{
+				{SourceID: "project", TargetID: "requests", Type: RelDependsOn},
+				{SourceID: "requests", TargetID: "urllib3", Type: RelDependsOn},
+				{SourceID: "orphan", TargetID: "x", Type: RelDependsOn},
+			},
+		}
+		got := s.ClassifyScope()
+		want := map[string]string{"requests": ScopeDirect, "urllib3": ScopeTransitive, "x": ScopeTransitive}
+		if len(got) != len(want) {
+			t.Fatalf("got %v, want %v", got, want)
+		}
+		for id, sc := range want {
+			if got[id] != sc {
+				t.Errorf("%s = %q, want %q", id, got[id], sc)
+			}
+		}
+		if ids, declared := s.Roots(); !declared || len(ids) != 1 || ids[0] != "project" {
+			t.Errorf("Roots() = %v, %v; want [project], true", ids, declared)
+		}
+	})
+	t.Run("spdx DESCRIBES target with edges is the only root", func(t *testing.T) {
+		s := &SBOM{Relationships: []Relationship{
+			{SourceID: "SPDXRef-DOCUMENT", TargetID: "root", Type: RelDescribes},
+			{SourceID: "root", TargetID: "a", Type: RelDependsOn},
+			{SourceID: "other", TargetID: "b", Type: RelDependsOn},
+		}}
+		got := s.ClassifyScope()
+		if got["a"] != ScopeDirect || got["b"] != ScopeTransitive {
+			t.Errorf("got %v", got)
+		}
+		if _, declared := s.Roots(); !declared {
+			t.Error("Roots() declared = false, want true")
+		}
+	})
+	t.Run("declared root without edges falls back to inference", func(t *testing.T) {
+		// syft's CycloneDX for a poetry.lock: metadata.component is the
+		// scanned directory with no edges, so requests is inferred as a root.
+		s := &SBOM{
+			Document: Document{Component: Component{ID: "dir"}},
+			Relationships: []Relationship{
+				{SourceID: "requests", TargetID: "urllib3", Type: RelDependsOn},
+			},
+		}
+		got := s.ClassifyScope()
+		if len(got) != 1 || got["urllib3"] != ScopeDirect {
+			t.Errorf("got %v, want urllib3 direct", got)
+		}
+		ids, declared := s.Roots()
+		if declared {
+			t.Error("Roots() declared = true, want false")
+		}
+		if len(ids) != 2 || ids[0] != "dir" || ids[1] != "requests" {
+			t.Errorf("Roots() = %v, want [dir requests]", ids)
+		}
+	})
+	t.Run("spdx DESCRIBES target without edges is a declared root", func(t *testing.T) {
+		doc, err := Parse([]byte(`{
+			"spdxVersion": "SPDX-2.3",
+			"SPDXID": "SPDXRef-DOCUMENT",
+			"packages": [{"SPDXID": "SPDXRef-app", "name": "app"}],
+			"relationships": [{"spdxElementId": "SPDXRef-DOCUMENT", "relationshipType": "DESCRIBES", "relatedSpdxElement": "SPDXRef-app"}]
+		}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ids, declared := doc.Roots(); !declared || !slices.Equal(ids, []string{"SPDXRef-app"}) {
+			t.Errorf("Roots() = %v, %v; want [SPDXRef-app], true", ids, declared)
+		}
+	})
+	t.Run("declared root without edges and inferred roots is not declared", func(t *testing.T) {
+		s := &SBOM{Relationships: []Relationship{
+			{SourceID: "SPDXRef-DOCUMENT", TargetID: "app", Type: RelDescribes},
+			{SourceID: "lib", TargetID: "dep", Type: RelDependsOn},
+		}}
+		if ids, declared := s.Roots(); declared || !slices.Equal(ids, []string{"app", "lib"}) {
+			t.Errorf("Roots() = %v, %v; want [app lib], false", ids, declared)
+		}
+	})
+	t.Run("no graph", func(t *testing.T) {
+		s := &SBOM{Document: Document{Component: Component{ID: "project"}}}
+		if got := s.ClassifyScope(); got != nil {
+			t.Errorf("got %v, want nil", got)
+		}
+		if ids, declared := s.Roots(); ids != nil || declared {
+			t.Errorf("Roots() = %v, %v; want nil, false", ids, declared)
+		}
+	})
+}
+
+func TestClassifyScopeCycloneDXMetadataComponent(t *testing.T) {
+	data := []byte(`{
+  "bomFormat": "CycloneDX", "specVersion": "1.6",
+  "metadata": {"component": {"bom-ref": "app", "type": "application", "name": "app"}},
+  "components": [
+    {"bom-ref": "requests", "type": "library", "name": "requests", "version": "2.31.0"},
+    {"bom-ref": "urllib3", "type": "library", "name": "urllib3", "version": "2.1.0"},
+    {"bom-ref": "pytest", "type": "library", "name": "pytest", "version": "8.0.0"},
+    {"bom-ref": "pluggy", "type": "library", "name": "pluggy", "version": "1.4.0"}
+  ],
+  "dependencies": [
+    {"ref": "app", "dependsOn": ["requests"]},
+    {"ref": "requests", "dependsOn": ["urllib3"]},
+    {"ref": "pytest", "dependsOn": ["pluggy"]}
+  ]
+}`)
+	doc, err := Parse(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if doc.Document.Component.ID != "app" {
+		t.Fatalf("Component.ID = %q, want app", doc.Document.Component.ID)
+	}
+	got := doc.ClassifyScope()
+	want := map[string]string{"requests": ScopeDirect, "urllib3": ScopeTransitive, "pluggy": ScopeTransitive}
+	if len(got) != len(want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+	for id, sc := range want {
+		if got[id] != sc {
+			t.Errorf("%s = %q, want %q", id, got[id], sc)
+		}
+	}
+
+	var buf bytes.Buffer
+	if err := Encode(&buf, doc, FormatCycloneDXJSON); err != nil {
+		t.Fatal(err)
+	}
+	again, err := Parse(buf.Bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if again.Document.Component.ID != "app" {
+		t.Errorf("encoded Component.ID = %q, want app", again.Document.Component.ID)
+	}
+}
+
+// syft's CycloneDX output for one small project per lock format, generated
+// with syft 1.55.0. Lock files that list the project (package-lock.json,
+// Cargo.lock, uv.lock, yarn berry) give it a node of its own; the others
+// list only dependencies.
+func TestClassifyScopeSyftLockFiles(t *testing.T) {
+	// Lock files that name the project add it as an inferred root; for the
+	// others only the declared directory remains, so the roots are declared.
+	tests := []struct {
+		file     string
+		want     map[string]string
+		roots    []string
+		declared bool
+	}{
+		{"npm", map[string]string{"express": ScopeDirect, "accepts": ScopeTransitive}, []string{"", "app"}, false},
+		{"cargo", map[string]string{"serde": ScopeDirect, "serde_derive": ScopeTransitive}, []string{"", "app"}, false},
+		{"uv", map[string]string{"requests": ScopeDirect, "urllib3": ScopeTransitive}, []string{"", "app"}, false},
+		{"berry", map[string]string{"express": ScopeDirect, "accepts": ScopeTransitive}, []string{"", "app"}, false},
+		{"poetry", map[string]string{"requests": ScopeDirect, "urllib3": ScopeTransitive}, []string{""}, true},
+		{"pdm", map[string]string{"requests": ScopeDirect, "urllib3": ScopeTransitive}, []string{""}, true},
+		{"pnpm9", map[string]string{"express": ScopeDirect, "accepts": ScopeTransitive}, []string{""}, true},
+		{"yarn", map[string]string{"express": ScopeDirect, "accepts": ScopeTransitive}, []string{""}, true},
+		// six has no dependencies and nothing depends on it, so no edge
+		// names it; from a lock file without the project it is direct.
+		{"poetry-leaf", map[string]string{"requests": ScopeDirect, "idna": ScopeTransitive, "six": ScopeDirect}, []string{""}, true},
+	}
+	for _, tt := range tests {
+		for _, format := range []string{"cyclonedx/syft-lock/%s.cdx.json", "spdx/syft-lock/%s.spdx.json"} {
+			t.Run(fmt.Sprintf(format, tt.file), func(t *testing.T) {
+				testSyftLockScope(t, filepath.Join("testdata", fmt.Sprintf(format, tt.file)), tt.want, tt.roots, tt.declared)
+			})
+		}
+	}
+}
+
+func testSyftLockScope(t *testing.T, file string, want map[string]string, wantRoots []string, wantDeclared bool) {
+	t.Helper()
+	data, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc, err := Parse(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	names := map[string]string{}
+	for _, p := range doc.Packages {
+		// The scanned directory is a package in SPDX; in CycloneDX it
+		// is metadata.component, without a package entry.
+		if !strings.HasPrefix(p.ID, "SPDXRef-DocumentRoot-") {
+			names[p.ID] = p.Name
+		}
+	}
+	got := map[string]string{}
+	for id, sc := range doc.ClassifyScope() {
+		got[names[id]] = sc
+	}
+	if !maps.Equal(got, want) {
+		t.Errorf("scope = %v, want %v", got, want)
+	}
+	// The scanned directory, which syft declares as the root without
+	// edges, is a root too and shows as "".
+	ids, declared := doc.Roots()
+	var roots []string
+	for _, id := range ids {
+		roots = append(roots, names[id])
+	}
+	slices.Sort(roots)
+	if declared != wantDeclared || !slices.Equal(roots, wantRoots) {
+		t.Errorf("Roots() = %v, %v; want %v, %v", roots, declared, wantRoots, wantDeclared)
+	}
+}
+
+// TestClassifyScopeLockFileWithoutEdges checks that packages of a lock file
+// the graph has no edges for stay unclassified, even though no edge names
+// them, while another lock file has edges.
+func TestClassifyScopeLockFileWithoutEdges(t *testing.T) {
+	from := func(id, name, lock string) Package {
+		return Package{ID: id, Name: name, Properties: []Property{{Name: syftLocationPath, Value: lock}}}
+	}
+	s := &SBOM{
+		Packages: []Package{
+			from("app", "app", "/web/package-lock.json"),
+			from("express", "express", "/web/package-lock.json"),
+			from("requests", "requests", "/py/poetry.lock"),
+			from("idna", "idna", "/py/poetry.lock"),
+		},
+		Relationships: []Relationship{{SourceID: "app", TargetID: "express", Type: RelDependsOn}},
+	}
+	want := map[string]string{"express": ScopeDirect}
+	if got := s.ClassifyScope(); !maps.Equal(got, want) {
+		t.Errorf("scope = %v, want %v", got, want)
+	}
 }

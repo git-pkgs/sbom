@@ -169,3 +169,32 @@ func TestSPDXEnvelopeDepthLimit(t *testing.T) {
 		t.Fatalf("Parse = %v, want ErrUnrecognized", err)
 	}
 }
+
+func TestSPDXDependencyOfNormalised(t *testing.T) {
+	inputs := map[string]string{
+		"json": `{"spdxVersion": "SPDX-2.3", "SPDXID": "SPDXRef-DOCUMENT",
+			"packages": [
+				{"SPDXID": "SPDXRef-a", "name": "a", "sourceInfo": "acquired package info from installed python package manifest file: /poetry.lock"},
+				{"SPDXID": "SPDXRef-b", "name": "b"}],
+			"relationships": [{"spdxElementId": "SPDXRef-b", "relationshipType": "DEPENDENCY_OF", "relatedSpdxElement": "SPDXRef-a"}]}`,
+		"tag-value": "SPDXVersion: SPDX-2.3\nSPDXID: SPDXRef-DOCUMENT\n\n" +
+			"PackageName: a\nSPDXID: SPDXRef-a\nPackageSourceInfo: acquired package info from installed python package manifest file: /poetry.lock\n\n" +
+			"PackageName: b\nSPDXID: SPDXRef-b\n\n" +
+			"Relationship: SPDXRef-b DEPENDENCY_OF SPDXRef-a\n",
+	}
+	for name, input := range inputs {
+		t.Run(name, func(t *testing.T) {
+			doc, err := Parse([]byte(input))
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := Relationship{SourceID: "SPDXRef-a", Source: "a", TargetID: "SPDXRef-b", Target: "b", Type: RelDependsOn}
+			if len(doc.Relationships) != 1 || doc.Relationships[0] != want {
+				t.Errorf("Relationships = %+v, want [%+v]", doc.Relationships, want)
+			}
+			if got := doc.Packages[0].SourceInfo; got != "acquired package info from installed python package manifest file: /poetry.lock" {
+				t.Errorf("SourceInfo = %q", got)
+			}
+		})
+	}
+}

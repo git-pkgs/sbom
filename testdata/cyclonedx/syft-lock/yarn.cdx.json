@@ -1,0 +1,109 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-10-30T00:00:00Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "author": "anchore",
+          "name": "syft",
+          "version": "1.55.0"
+        }
+      ]
+    },
+    "component": {
+      "bom-ref": "60b26b7e873ded8f",
+      "type": "file",
+      "name": "yarn"
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:npm/accepts@1.3.8?package-id=16547953eed403c0",
+      "type": "library",
+      "name": "accepts",
+      "version": "1.3.8",
+      "cpe": "cpe:2.3:a:accepts:accepts:1.3.8:*:*:*:*:*:*:*",
+      "purl": "pkg:npm/accepts@1.3.8",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "javascript-lock-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "javascript"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "npm"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "javascript-yarn-lock-entry"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/yarn.lock"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/express@4.18.2?package-id=6c046d5d80ebc406",
+      "type": "library",
+      "name": "express",
+      "version": "4.18.2",
+      "cpe": "cpe:2.3:a:openjsf:express:4.18.2:*:*:*:*:node.js:*:*",
+      "purl": "pkg:npm/express@4.18.2",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "javascript-lock-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "javascript"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "npm"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "javascript-yarn-lock-entry"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/yarn.lock"
+        }
+      ]
+    },
+    {
+      "bom-ref": "dcee26e98fae7b36",
+      "type": "file",
+      "name": "yarn/yarn.lock",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "dedc73362908644f427cffb952d559bdeeaf0429"
+        },
+        {
+          "alg": "SHA-256",
+          "content": "22f8183fd74d8b014155173f3efd3d7ae2aaaae9e210b76972148890cc0c5b6d"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/express@4.18.2?package-id=6c046d5d80ebc406",
+      "dependsOn": [
+        "pkg:npm/accepts@1.3.8?package-id=16547953eed403c0"
+      ]
+    }
+  ]
+}

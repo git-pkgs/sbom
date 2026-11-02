@@ -173,6 +173,8 @@ func (p *spdxTagParser) packageField(tag, value string) error {
 		p.pkg.CopyrightText = value
 	case "PackageDescription":
 		p.pkg.Description = value
+	case "PackageSourceInfo":
+		p.pkg.SourceInfo = value
 	case "PrimaryPackagePurpose":
 		p.pkg.PrimaryPackagePurpose = value
 	case "PackageChecksum":

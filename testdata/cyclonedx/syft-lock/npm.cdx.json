@@ -1,0 +1,145 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-10-30T00:00:00Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "author": "anchore",
+          "name": "syft",
+          "version": "1.55.0"
+        }
+      ]
+    },
+    "component": {
+      "bom-ref": "d8b0ae186b8a4344",
+      "type": "file",
+      "name": "npm"
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:npm/accepts@1.3.8?package-id=27587463afb4ef54",
+      "type": "library",
+      "name": "accepts",
+      "version": "1.3.8",
+      "cpe": "cpe:2.3:a:accepts:accepts:1.3.8:*:*:*:*:*:*:*",
+      "purl": "pkg:npm/accepts@1.3.8",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "javascript-lock-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "javascript"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "npm"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "javascript-npm-package-lock-entry"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/package-lock.json"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/app@1.0.0?package-id=d612e2e66643c207",
+      "type": "library",
+      "name": "app",
+      "version": "1.0.0",
+      "cpe": "cpe:2.3:a:app:app:1.0.0:*:*:*:*:*:*:*",
+      "purl": "pkg:npm/app@1.0.0",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "javascript-lock-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "javascript"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "npm"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "javascript-npm-package-lock-entry"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/package-lock.json"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/express@4.18.2?package-id=c3444b233839bfbe",
+      "type": "library",
+      "name": "express",
+      "version": "4.18.2",
+      "cpe": "cpe:2.3:a:openjsf:express:4.18.2:*:*:*:*:node.js:*:*",
+      "purl": "pkg:npm/express@4.18.2",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "javascript-lock-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "javascript"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "npm"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "javascript-npm-package-lock-entry"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/package-lock.json"
+        }
+      ]
+    },
+    {
+      "bom-ref": "fd71c2238fc07657",
+      "type": "file",
+      "name": "npm/package-lock.json",
+      "hashes": [
+        {
+          "alg": "SHA-1",
+          "content": "cb30ec046e1244667495b6eaedaf0d69dfedcd7e"
+        },
+        {
+          "alg": "SHA-256",
+          "content": "80fbfd82abcabbd080a02de72c130647c1194af899ff99ab3c9997bb23d5de00"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/app@1.0.0?package-id=d612e2e66643c207",
+      "dependsOn": [
+        "pkg:npm/express@4.18.2?package-id=c3444b233839bfbe"
+      ]
+    },
+    {
+      "ref": "pkg:npm/express@4.18.2?package-id=c3444b233839bfbe",
+      "dependsOn": [
+        "pkg:npm/accepts@1.3.8?package-id=27587463afb4ef54"
+      ]
+    }
+  ]
+}
