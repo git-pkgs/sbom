@@ -331,9 +331,9 @@ func (s *SBOM) Roots() (ids []string, declared bool) {
 
 // ProjectRoots returns the IDs of the roots that are the project rather than
 // a top of the graph: the declared roots, and inferred roots read from a lock
-// file that lists the project (package-lock.json, Cargo.lock, uv.lock and
-// yarn berry's yarn.lock). Packages of an image that nothing depends on are
-// inferred roots, but not the project. It returns nil for a flat-list SBOM.
+// file that lists the project (see projectLockFiles). Packages of an image
+// that nothing depends on are inferred roots, but not the project. It
+// returns nil for a flat-list SBOM.
 func (s *SBOM) ProjectRoots() []string {
 	ids, declared := s.Roots()
 	if ids == nil || declared {
