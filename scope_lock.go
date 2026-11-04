@@ -7,14 +7,23 @@ import (
 
 // These lock files list only the project's dependencies, not the project
 // itself, so a package from one that nothing depends on is a direct
-// dependency rather than the project. npm's package-lock.json, Cargo.lock,
-// uv.lock and yarn berry's yarn.lock do list the project, and are left to
-// root inference.
+// dependency rather than the project. Lock files that do list the project
+// are in projectLockFiles and are left to root inference.
 var projectlessLockFiles = map[string]bool{
 	"poetry.lock":    true,
 	"pdm.lock":       true,
 	"pnpm-lock.yaml": true,
 	yarnLockFile:     true, // yarn v1; see yarnBerryWorkspaces
+}
+
+// These lock files list the project itself, so an inferred root read from
+// one is the project.
+var projectLockFiles = map[string]bool{
+	"package-lock.json":   true,
+	"npm-shrinkwrap.json": true,
+	"Cargo.lock":          true,
+	"uv.lock":             true,
+	yarnLockFile:          true, // yarn berry; yarn v1's roots are dependencies
 }
 
 const (
