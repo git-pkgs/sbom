@@ -14,10 +14,11 @@ var projectlessLockFiles = map[string]bool{
 	"poetry.lock":    true,
 	"pdm.lock":       true,
 	"pnpm-lock.yaml": true,
-	"yarn.lock":      true, // yarn v1; see yarnBerryWorkspaces
+	yarnLockFile:     true, // yarn v1; see yarnBerryWorkspaces
 }
 
 const (
+	yarnLockFile = "yarn.lock"
 	// syftLocationPath is the CycloneDX property syft records the file a
 	// package was read from in.
 	syftLocationPath = "syft:location:0:path"
@@ -66,7 +67,7 @@ func (s *SBOM) topLevelDependencies(inferred, edged map[string]bool) map[string]
 		if lock == "" || !projectlessLockFiles[name] {
 			continue
 		}
-		if name == "yarn.lock" {
+		if name == yarnLockFile {
 			if berryLocks == nil {
 				berryLocks = s.yarnBerryWorkspaces()
 			}
@@ -88,7 +89,7 @@ func (s *SBOM) yarnBerryWorkspaces() map[string]bool {
 	locks := map[string]bool{}
 	for i := range s.Packages {
 		p := &s.Packages[i]
-		if lock := p.lockFile(); p.Version == yarnBerryWorkspaceVersion && path.Base(lock) == "yarn.lock" {
+		if lock := p.lockFile(); p.Version == yarnBerryWorkspaceVersion && path.Base(lock) == yarnLockFile {
 			locks[lock] = true
 		}
 	}

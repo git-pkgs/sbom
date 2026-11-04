@@ -112,99 +112,102 @@ func TestClassifyScope(t *testing.T) {
 	})
 }
 
-func TestClassifyScopeDeclaredRoot(t *testing.T) {
-	t.Run("cyclonedx component with edges is the only root", func(t *testing.T) {
-		// The project links requests; the stray lock entry orphan -> x is
-		// not a root once the project is declared.
-		s := &SBOM{
-			Document: Document{Component: Component{ID: "project"}},
-			Relationships: []Relationship{
-				{SourceID: "project", TargetID: "requests", Type: RelDependsOn},
-				{SourceID: "requests", TargetID: "urllib3", Type: RelDependsOn},
-				{SourceID: "orphan", TargetID: "x", Type: RelDependsOn},
-			},
+func TestClassifyScopeDeclaredCycloneDXRoot(t *testing.T) {
+	// The project links requests; the stray lock entry orphan -> x is
+	// not a root once the project is declared.
+	s := &SBOM{
+		Document: Document{Component: Component{ID: "project"}},
+		Relationships: []Relationship{
+			{SourceID: "project", TargetID: "requests", Type: RelDependsOn},
+			{SourceID: "requests", TargetID: "urllib3", Type: RelDependsOn},
+			{SourceID: "orphan", TargetID: "x", Type: RelDependsOn},
+		},
+	}
+	got := s.ClassifyScope()
+	want := map[string]string{"requests": ScopeDirect, "urllib3": ScopeTransitive, "x": ScopeTransitive}
+	if len(got) != len(want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+	for id, sc := range want {
+		if got[id] != sc {
+			t.Errorf("%s = %q, want %q", id, got[id], sc)
 		}
-		got := s.ClassifyScope()
-		want := map[string]string{"requests": ScopeDirect, "urllib3": ScopeTransitive, "x": ScopeTransitive}
-		if len(got) != len(want) {
-			t.Fatalf("got %v, want %v", got, want)
-		}
-		for id, sc := range want {
-			if got[id] != sc {
-				t.Errorf("%s = %q, want %q", id, got[id], sc)
-			}
-		}
-		if ids, declared := s.Roots(); !declared || len(ids) != 1 || ids[0] != "project" {
-			t.Errorf("Roots() = %v, %v; want [project], true", ids, declared)
-		}
-	})
-	t.Run("spdx DESCRIBES target with edges is the only root", func(t *testing.T) {
-		s := &SBOM{Relationships: []Relationship{
-			{SourceID: "SPDXRef-DOCUMENT", TargetID: "root", Type: RelDescribes},
-			{SourceID: "root", TargetID: "a", Type: RelDependsOn},
-			{SourceID: "other", TargetID: "b", Type: RelDependsOn},
-		}}
-		got := s.ClassifyScope()
-		if got["a"] != ScopeDirect || got["b"] != ScopeTransitive {
-			t.Errorf("got %v", got)
-		}
-		if _, declared := s.Roots(); !declared {
-			t.Error("Roots() declared = false, want true")
-		}
-	})
-	t.Run("declared root without edges falls back to inference", func(t *testing.T) {
-		// syft's CycloneDX for a poetry.lock: metadata.component is the
-		// scanned directory with no edges, so requests is inferred as a root.
-		s := &SBOM{
-			Document: Document{Component: Component{ID: "dir"}},
-			Relationships: []Relationship{
-				{SourceID: "requests", TargetID: "urllib3", Type: RelDependsOn},
-			},
-		}
-		got := s.ClassifyScope()
-		if len(got) != 1 || got["urllib3"] != ScopeDirect {
-			t.Errorf("got %v, want urllib3 direct", got)
-		}
-		ids, declared := s.Roots()
-		if declared {
-			t.Error("Roots() declared = true, want false")
-		}
-		if len(ids) != 2 || ids[0] != "dir" || ids[1] != "requests" {
-			t.Errorf("Roots() = %v, want [dir requests]", ids)
-		}
-	})
-	t.Run("spdx DESCRIBES target without edges is a declared root", func(t *testing.T) {
-		doc, err := Parse([]byte(`{
+	}
+	if ids, declared := s.Roots(); !declared || len(ids) != 1 || ids[0] != "project" {
+		t.Errorf("Roots() = %v, %v; want [project], true", ids, declared)
+	}
+}
+
+func TestClassifyScopeDeclaredSPDXRoot(t *testing.T) {
+	s := &SBOM{Relationships: []Relationship{
+		{SourceID: "SPDXRef-DOCUMENT", TargetID: "root", Type: RelDescribes},
+		{SourceID: "root", TargetID: "a", Type: RelDependsOn},
+		{SourceID: "other", TargetID: "b", Type: RelDependsOn},
+	}}
+	got := s.ClassifyScope()
+	if got["a"] != ScopeDirect || got["b"] != ScopeTransitive {
+		t.Errorf("got %v", got)
+	}
+	if _, declared := s.Roots(); !declared {
+		t.Error("Roots() declared = false, want true")
+	}
+}
+
+func TestClassifyScopeUnlinkedDeclaredRoot(t *testing.T) {
+	// syft's CycloneDX for a poetry.lock: metadata.component is the
+	// scanned directory with no edges, so requests is inferred as a root.
+	s := &SBOM{
+		Document: Document{Component: Component{ID: "dir"}},
+		Relationships: []Relationship{
+			{SourceID: "requests", TargetID: "urllib3", Type: RelDependsOn},
+		},
+	}
+	got := s.ClassifyScope()
+	if len(got) != 1 || got["urllib3"] != ScopeDirect {
+		t.Errorf("got %v, want urllib3 direct", got)
+	}
+	ids, declared := s.Roots()
+	if declared {
+		t.Error("Roots() declared = true, want false")
+	}
+	if len(ids) != 2 || ids[0] != "dir" || ids[1] != "requests" {
+		t.Errorf("Roots() = %v, want [dir requests]", ids)
+	}
+}
+
+func TestRootsDeclaredSPDXRootWithoutDependencies(t *testing.T) {
+	doc, err := Parse([]byte(`{
 			"spdxVersion": "SPDX-2.3",
 			"SPDXID": "SPDXRef-DOCUMENT",
 			"packages": [{"SPDXID": "SPDXRef-app", "name": "app"}],
 			"relationships": [{"spdxElementId": "SPDXRef-DOCUMENT", "relationshipType": "DESCRIBES", "relatedSpdxElement": "SPDXRef-app"}]
 		}`))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if ids, declared := doc.Roots(); !declared || !slices.Equal(ids, []string{"SPDXRef-app"}) {
-			t.Errorf("Roots() = %v, %v; want [SPDXRef-app], true", ids, declared)
-		}
-	})
-	t.Run("declared root without edges and inferred roots is not declared", func(t *testing.T) {
-		s := &SBOM{Relationships: []Relationship{
-			{SourceID: "SPDXRef-DOCUMENT", TargetID: "app", Type: RelDescribes},
-			{SourceID: "lib", TargetID: "dep", Type: RelDependsOn},
-		}}
-		if ids, declared := s.Roots(); declared || !slices.Equal(ids, []string{"app", "lib"}) {
-			t.Errorf("Roots() = %v, %v; want [app lib], false", ids, declared)
-		}
-	})
-	t.Run("no graph", func(t *testing.T) {
-		s := &SBOM{Document: Document{Component: Component{ID: "project"}}}
-		if got := s.ClassifyScope(); got != nil {
-			t.Errorf("got %v, want nil", got)
-		}
-		if ids, declared := s.Roots(); ids != nil || declared {
-			t.Errorf("Roots() = %v, %v; want nil, false", ids, declared)
-		}
-	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ids, declared := doc.Roots(); !declared || !slices.Equal(ids, []string{"SPDXRef-app"}) {
+		t.Errorf("Roots() = %v, %v; want [SPDXRef-app], true", ids, declared)
+	}
+}
+
+func TestRootsDeclaredAndInferred(t *testing.T) {
+	s := &SBOM{Relationships: []Relationship{
+		{SourceID: "SPDXRef-DOCUMENT", TargetID: "app", Type: RelDescribes},
+		{SourceID: "lib", TargetID: "dep", Type: RelDependsOn},
+	}}
+	if ids, declared := s.Roots(); declared || !slices.Equal(ids, []string{"app", "lib"}) {
+		t.Errorf("Roots() = %v, %v; want [app lib], false", ids, declared)
+	}
+}
+
+func TestClassifyScopeDeclaredRootWithoutGraph(t *testing.T) {
+	s := &SBOM{Document: Document{Component: Component{ID: "project"}}}
+	if got := s.ClassifyScope(); got != nil {
+		t.Errorf("got %v, want nil", got)
+	}
+	if ids, declared := s.Roots(); ids != nil || declared {
+		t.Errorf("Roots() = %v, %v; want nil, false", ids, declared)
+	}
 }
 
 func TestClassifyScopeCycloneDXMetadataComponent(t *testing.T) {

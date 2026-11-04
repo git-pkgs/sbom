@@ -297,6 +297,7 @@ func packageToSPDX(p *Package, i int) spdxPackage {
 		SPDXID:           p.ID,
 		Name:             p.Name,
 		VersionInfo:      p.Version,
+		SourceInfo:       p.SourceInfo,
 		DownloadLocation: firstNonEmpty(p.DownloadLocation, spdxNoAssertion),
 		LicenseConcluded: firstNonEmpty(p.LicenseConcluded, spdxNoAssertion),
 		LicenseDeclared:  firstNonEmpty(p.LicenseDeclared, spdxNoAssertion),

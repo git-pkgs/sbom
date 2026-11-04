@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"io"
+	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -64,6 +65,34 @@ func TestEncodeRoundTrip(t *testing.T) {
 				t.Errorf("LicenseDeclared = %q, want %q", p.LicenseDeclared, want.LicenseDeclared)
 			}
 		})
+	}
+}
+
+func TestEncodeSPDXSourceInfoRoundTrip(t *testing.T) {
+	data, err := os.ReadFile("testdata/spdx/syft-lock/poetry.spdx.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	src, err := Parse(data)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	var buf bytes.Buffer
+	if err := Encode(&buf, src, FormatSPDXJSON); err != nil {
+		t.Fatalf("Encode: %v", err)
+	}
+	out, err := Parse(buf.Bytes())
+	if err != nil {
+		t.Fatalf("Parse encoded: %v", err)
+	}
+	for _, name := range []string{"requests", "urllib3"} {
+		want := findPackage(t, src, name).SourceInfo
+		if want == "" {
+			t.Fatalf("%s: fixture has no SourceInfo", name)
+		}
+		if got := findPackage(t, out, name).SourceInfo; got != want {
+			t.Errorf("%s: SourceInfo = %q, want %q", name, got, want)
+		}
 	}
 }
 
