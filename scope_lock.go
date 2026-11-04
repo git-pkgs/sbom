@@ -17,6 +17,16 @@ var projectlessLockFiles = map[string]bool{
 	yarnLockFile:     true, // yarn v1; see yarnBerryWorkspaces
 }
 
+// These lock files list the project itself, so an inferred root read from
+// one is the project.
+var projectLockFiles = map[string]bool{
+	"package-lock.json":   true,
+	"npm-shrinkwrap.json": true,
+	"Cargo.lock":          true,
+	"uv.lock":             true,
+	yarnLockFile:          true, // yarn berry; yarn v1's roots are dependencies
+}
+
 const (
 	yarnLockFile = "yarn.lock"
 	// syftLocationPath is the CycloneDX property syft records the file a

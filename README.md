@@ -99,6 +99,12 @@ When the document declares its root, through an SPDX `DESCRIBES` edge or the Cyc
 ids, declared := doc.Roots()
 ```
 
+An inferred root isn't always the project: in an image, packages nothing depends on, such as `alpine-baselayout`, are roots too. `ProjectRoots` returns only the roots that are the project: the declared ones, and inferred roots syft records as coming from a lock file that lists the project (`package-lock.json`, `npm-shrinkwrap.json`, `Cargo.lock`, `uv.lock` or a yarn berry `yarn.lock`):
+
+```go
+project := doc.ProjectRoots()
+```
+
 ## Ancestors
 
 `Package.Ancestors` records the components a package was derived from, such as the upstream project of a fork. CycloneDX JSON and XML read and write these as `pedigree.ancestors`:

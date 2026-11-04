@@ -319,13 +319,63 @@ func testSyftLockScope(t *testing.T, file string, want map[string]string, wantRo
 	// The scanned directory, which syft declares as the root without
 	// edges, is a root too and shows as "".
 	ids, declared := doc.Roots()
+	roots := rootNames(ids, names)
+	if declared != wantDeclared || !slices.Equal(roots, wantRoots) {
+		t.Errorf("Roots() = %v, %v; want %v, %v", roots, declared, wantRoots, wantDeclared)
+	}
+	// Every root of these lock files is the project: the scanned directory
+	// and the entry for the project in lock files that list it.
+	if got := rootNames(doc.ProjectRoots(), names); !slices.Equal(got, wantRoots) {
+		t.Errorf("ProjectRoots() = %v, want %v", got, wantRoots)
+	}
+}
+
+func rootNames(ids []string, names map[string]string) []string {
 	var roots []string
 	for _, id := range ids {
 		roots = append(roots, names[id])
 	}
 	slices.Sort(roots)
-	if declared != wantDeclared || !slices.Equal(roots, wantRoots) {
-		t.Errorf("Roots() = %v, %v; want %v, %v", roots, declared, wantRoots, wantDeclared)
+	return roots
+}
+
+func TestProjectRootsImage(t *testing.T) {
+	// syft declares the image as the root without edges, so packages
+	// nothing depends on, such as alpine-baselayout, are inferred roots.
+	// They are the image's packages, not the project.
+	tests := []struct {
+		file string
+		want []string
+	}{
+		{"cyclonedx/alpine.cdx.json", []string{""}},
+		{"spdx/alpine.spdx.json", []string{"docker.io/library/alpine"}},
+		{"cyclonedx/nginx.cdx.json", []string{""}},
+		{"spdx/nginx.spdx.json", []string{"docker.io/library/nginx"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.file, func(t *testing.T) {
+			data, err := os.ReadFile(filepath.Join("testdata", tt.file))
+			if err != nil {
+				t.Fatal(err)
+			}
+			doc, err := Parse(data)
+			if err != nil {
+				t.Fatal(err)
+			}
+			names := map[string]string{}
+			for _, p := range doc.Packages {
+				names[p.ID] = p.Name
+			}
+			if got := rootNames(doc.ProjectRoots(), names); !slices.Equal(got, tt.want) {
+				t.Errorf("ProjectRoots() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestProjectRootsFlatList(t *testing.T) {
+	if got := (&SBOM{}).ProjectRoots(); got != nil {
+		t.Errorf("ProjectRoots() = %v, want nil", got)
 	}
 }
 

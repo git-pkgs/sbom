@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"path"
 	"slices"
 	"strings"
 )
@@ -328,28 +329,60 @@ func (s *SBOM) Roots() (ids []string, declared bool) {
 	return ids, declared
 }
 
+// ProjectRoots returns the IDs of the roots that are the project rather than
+// a top of the graph: the declared roots, and inferred roots read from a lock
+// file that lists the project (package-lock.json, Cargo.lock, uv.lock and
+// yarn berry's yarn.lock). Packages of an image that nothing depends on are
+// inferred roots, but not the project. It returns nil for a flat-list SBOM.
+func (s *SBOM) ProjectRoots() []string {
+	ids, declared := s.Roots()
+	if ids == nil || declared {
+		return ids
+	}
+	project := s.declaredRoots()
+	for i := range s.Packages {
+		if p := &s.Packages[i]; projectLockFiles[path.Base(p.lockFile())] {
+			project[p.ID] = true
+		}
+	}
+	return slices.DeleteFunc(ids, func(id string) bool { return !project[id] })
+}
+
+// declaredRoots returns the roots the document declares: the targets of
+// DESCRIBES edges and the CycloneDX metadata.component.
+func (s *SBOM) declaredRoots() map[string]bool {
+	roots := map[string]bool{}
+	for _, r := range s.Relationships {
+		if r.Type == RelDescribes {
+			roots[r.TargetID] = true
+		}
+	}
+	if id := s.Document.Component.ID; id != "" {
+		roots[id] = true
+	}
+	return roots
+}
+
 // scopeRoots returns the root set for ClassifyScope, nil when there is no
 // graph, the inferred roots that are top-level dependencies instead (see
 // topLevelDependencies), and whether every root is declared.
 func (s *SBOM) scopeRoots() (roots, top map[string]bool, declared bool) {
 	targets := map[string]bool{}
 	sources := map[string]bool{}
-	declaredRoots := map[string]bool{}
+	describes := false
 	for _, r := range s.Relationships {
 		switch r.Type {
 		case RelDependsOn:
 			sources[r.SourceID] = true
 			targets[r.TargetID] = true
 		case RelDescribes:
-			declaredRoots[r.TargetID] = true
+			describes = true
 		}
 	}
-	if len(sources) == 0 && len(declaredRoots) == 0 {
+	if len(sources) == 0 && !describes {
 		return nil, nil, false
 	}
-	if id := s.Document.Component.ID; id != "" {
-		declaredRoots[id] = true
-	}
+	declaredRoots := s.declaredRoots()
 	// A declared root with edges of its own names the project's direct
 	// dependencies, so nothing needs inferring.
 	linked := map[string]bool{}
