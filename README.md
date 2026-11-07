@@ -32,6 +32,19 @@ for _, p := range doc.Packages {
 
 `Parse` auto-detects the format. `Detect` returns just the type without a full parse, scanning JSON keys, the XML root, or the tag-value document header.
 
+`Inspect` reads the type and specification version from an `io.Reader`. It stops once both values are known and skips unrelated JSON values without building the package model:
+
+```go
+file, _ := os.Open("bom.cdx.json")
+defer file.Close()
+
+metadata, err := sbom.Inspect(file)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(metadata.Type, metadata.SpecVersion)
+```
+
 Packages with different document IDs or PURLs remain separate, even when their names and versions match. `AddPackage` replaces an entry only when its name, version, document ID, and set of PURLs match. `Package.PURL()` returns the first PURL; `Package.ExternalRefs` retains all declared references.
 
 ```go

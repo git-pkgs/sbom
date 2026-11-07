@@ -1,6 +1,7 @@
 package sbom
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -124,6 +125,23 @@ func BenchmarkDetect(b *testing.B) {
 			b.ResetTimer()
 			for range b.N {
 				_ = Detect(data)
+			}
+		})
+	}
+}
+
+func BenchmarkInspect(b *testing.B) {
+	for _, f := range benchFixtures {
+		data := readFixture(b, f.path)
+		b.Run(f.name, func(b *testing.B) {
+			b.ReportAllocs()
+			b.SetBytes(int64(len(data)))
+			b.ResetTimer()
+			for range b.N {
+				_, benchmarkError = Inspect(bytes.NewReader(data))
+			}
+			if benchmarkError != nil {
+				b.Fatal(benchmarkError)
 			}
 		})
 	}
