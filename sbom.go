@@ -513,7 +513,7 @@ func detect(data []byte) detectedFormat {
 				return detectedFormat{typ: TypeCycloneDX}
 			}
 			return detectedFormat{}
-		case "spdxVersion", "SPDXID":
+		case "spdxVersion", spdxTagID:
 			return detectedFormat{typ: TypeSPDX}
 		case "sbom":
 			return detectedFormat{typ: TypeSPDX, spdxEnvelope: true}
