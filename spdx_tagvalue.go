@@ -8,7 +8,12 @@ import (
 	"unicode"
 )
 
-const spdxTripleFields = 3
+const (
+	spdxTripleFields   = 3
+	spdxTagID          = "SPDXID"
+	spdxTagPackageName = "PackageName"
+	spdxTagVersion     = "SPDXVersion"
+)
 
 func detectSPDXTagValue(data []byte) detectedFormat {
 	scanner := newSPDXScanner(data)
@@ -18,14 +23,14 @@ func detectSPDXTagValue(data []byte) detectedFormat {
 			continue
 		}
 		tag, value, ok := strings.Cut(line, ":")
-		if !ok || strings.TrimSpace(tag) == "PackageName" {
+		if !ok || strings.TrimSpace(tag) == spdxTagPackageName {
 			break
 		}
 		value, err := readSPDXText(scanner, value)
 		if err != nil {
 			break
 		}
-		if strings.TrimSpace(tag) == "SPDXVersion" && strings.HasPrefix(value, "SPDX-") {
+		if strings.TrimSpace(tag) == spdxTagVersion && strings.HasPrefix(value, "SPDX-") {
 			return detectedFormat{typ: TypeSPDX, tagValue: true}
 		}
 	}
@@ -98,7 +103,7 @@ func readSPDXText(scanner *bufio.Scanner, value string) (string, error) {
 
 func (p *spdxTagParser) apply(tag, value string) error {
 	switch tag {
-	case "SPDXVersion":
+	case spdxTagVersion:
 		p.doc.SPDXVersion = value
 	case "DataLicense":
 		p.doc.DataLicense = value
@@ -108,14 +113,14 @@ func (p *spdxTagParser) apply(tag, value string) error {
 		p.doc.DocumentNamespace = value
 	case "Creator", "Created", "LicenseListVersion":
 		p.creationInfo(tag, value)
-	case "PackageName":
+	case spdxTagPackageName:
 		p.inDocument = false
 		p.doc.Packages = append(p.doc.Packages, spdxPackage{Name: value})
 		p.pkg = &p.doc.Packages[len(p.doc.Packages)-1]
 	case "FileName", "SnippetSPDXID", "LicenseID", "Annotator", "Reviewer":
 		p.inDocument = false
 		p.pkg = nil
-	case "SPDXID":
+	case spdxTagID:
 		if p.pkg != nil {
 			p.pkg.SPDXID = value
 		} else if p.inDocument {
