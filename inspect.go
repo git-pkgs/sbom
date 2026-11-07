@@ -9,6 +9,7 @@ import (
 	"io"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 const (
@@ -18,6 +19,14 @@ const (
 )
 
 var spdxTextEndBytes = []byte(spdxTextEnd)
+
+type textEndState uint8
+
+const (
+	textEndAbsent textEndState = iota
+	textEndValid
+	textEndInvalid
+)
 
 // Metadata is the format information available without parsing an SBOM model.
 type Metadata struct {
@@ -242,7 +251,7 @@ func inspectXML(reader io.Reader) (Metadata, error) {
 func inspectTagValue(reader *bufio.Reader) (Metadata, error) {
 	inText := false
 	for {
-		line, hasTextEnd, err := readLinePrefix(reader)
+		line, textEnd, err := readLinePrefix(reader)
 		if err == io.EOF {
 			return Metadata{}, nil
 		}
@@ -250,7 +259,7 @@ func inspectTagValue(reader *bufio.Reader) (Metadata, error) {
 			return Metadata{}, err
 		}
 		if inText {
-			closed, valid := inspectTextEnd(line, hasTextEnd)
+			closed, valid := inspectTextEnd(textEnd)
 			if !valid {
 				return Metadata{}, nil
 			}
@@ -258,7 +267,7 @@ func inspectTagValue(reader *bufio.Reader) (Metadata, error) {
 			continue
 		}
 
-		metadata, multiline, done := inspectTagLine(line, hasTextEnd)
+		metadata, multiline, done := inspectTagLine(line, textEnd)
 		if done {
 			return metadata, nil
 		}
@@ -266,15 +275,14 @@ func inspectTagValue(reader *bufio.Reader) (Metadata, error) {
 	}
 }
 
-func inspectTextEnd(line []byte, hasTextEnd bool) (bool, bool) {
-	if !hasTextEnd {
+func inspectTextEnd(textEnd textEndState) (bool, bool) {
+	if textEnd == textEndAbsent {
 		return false, true
 	}
-	_, after, found := strings.Cut(string(line), spdxTextEnd)
-	return true, found && strings.TrimSpace(after) == ""
+	return true, textEnd == textEndValid
 }
 
-func inspectTagLine(line []byte, hasTextEnd bool) (Metadata, bool, bool) {
+func inspectTagLine(line []byte, textEnd textEndState) (Metadata, bool, bool) {
 	lineText := strings.TrimLeftFunc(string(line), unicode.IsSpace)
 	if lineText == "" || strings.HasPrefix(lineText, "#") {
 		return Metadata{}, false, false
@@ -287,15 +295,13 @@ func inspectTagLine(line []byte, hasTextEnd bool) (Metadata, bool, bool) {
 
 	value = strings.TrimLeftFunc(value, unicode.IsSpace)
 	if text, multiline := strings.CutPrefix(value, "<text>"); multiline {
-		var closed bool
-		var after string
-		value, after, closed = strings.Cut(text, spdxTextEnd)
-		if !closed {
-			return Metadata{}, !hasTextEnd, hasTextEnd
+		if textEnd == textEndAbsent {
+			return Metadata{}, true, false
 		}
-		if strings.TrimSpace(after) != "" {
+		if textEnd == textEndInvalid {
 			return Metadata{}, false, true
 		}
+		value, _, _ = strings.Cut(text, spdxTextEnd)
 	}
 	value = strings.TrimSpace(value)
 	if tag == spdxTagVersion && strings.HasPrefix(value, "SPDX-") {
@@ -304,38 +310,99 @@ func inspectTagLine(line []byte, hasTextEnd bool) (Metadata, bool, bool) {
 	return Metadata{}, false, false
 }
 
-func readLinePrefix(reader *bufio.Reader) ([]byte, bool, error) {
+func readLinePrefix(reader *bufio.Reader) ([]byte, textEndState, error) {
 	prefix := make([]byte, 0, tagLineInitialCapacity)
 	var tail [len(spdxTextEnd) - 1]byte
 	tailLen := 0
-	hasTextEnd := false
+	foundTextEnd := false
+	var trailing textEndTrailing
 
 	for {
 		fragment, more, err := reader.ReadLine()
 		if err != nil {
-			return nil, false, err
+			return nil, textEndAbsent, err
 		}
-		if !hasTextEnd {
-			hasTextEnd = fragmentHasTextEnd(tail[:tailLen], fragment)
+		if foundTextEnd {
+			trailing.add(fragment)
+		} else if after, found := fragmentTextEnd(tail[:tailLen], fragment); found {
+			foundTextEnd = true
+			trailing.add(after)
+		} else {
+			tailLen = updateTextTail(tail[:], tailLen, fragment)
 		}
-		tailLen = updateTextTail(tail[:], tailLen, fragment)
 		if remaining := tagLinePrefixLimit - len(prefix); remaining > 0 {
 			prefix = append(prefix, fragment[:min(remaining, len(fragment))]...)
 		}
 		if !more {
-			return prefix, hasTextEnd, nil
+			switch {
+			case !foundTextEnd:
+				return prefix, textEndAbsent, nil
+			case trailing.valid():
+				return prefix, textEndValid, nil
+			default:
+				return prefix, textEndInvalid, nil
+			}
 		}
 	}
 }
 
-func fragmentHasTextEnd(tail, fragment []byte) bool {
-	if bytes.Contains(fragment, spdxTextEndBytes) {
-		return true
-	}
+func fragmentTextEnd(tail, fragment []byte) ([]byte, bool) {
 	var boundary [2 * (len(spdxTextEnd) - 1)]byte
 	n := copy(boundary[:], tail)
 	n += copy(boundary[n:], fragment[:min(len(fragment), len(spdxTextEnd)-1)])
-	return bytes.Contains(boundary[:n], spdxTextEndBytes)
+	index := bytes.Index(boundary[:n], spdxTextEndBytes)
+	if index >= 0 {
+		consumed := index + len(spdxTextEnd) - len(tail)
+		return fragment[consumed:], true
+	}
+	if index := bytes.Index(fragment, spdxTextEndBytes); index >= 0 {
+		return fragment[index+len(spdxTextEnd):], true
+	}
+	return nil, false
+}
+
+type textEndTrailing struct {
+	pending    [utf8.UTFMax]byte
+	pendingLen int
+	invalid    bool
+}
+
+func (t *textEndTrailing) add(data []byte) {
+	if t.invalid {
+		return
+	}
+	if t.pendingLen > 0 {
+		for len(data) > 0 && !utf8.FullRune(t.pending[:t.pendingLen]) {
+			t.pending[t.pendingLen] = data[0]
+			t.pendingLen++
+			data = data[1:]
+		}
+		if !utf8.FullRune(t.pending[:t.pendingLen]) {
+			return
+		}
+		r, _ := utf8.DecodeRune(t.pending[:t.pendingLen])
+		if !unicode.IsSpace(r) {
+			t.invalid = true
+			return
+		}
+		t.pendingLen = 0
+	}
+	for len(data) > 0 {
+		if !utf8.FullRune(data) {
+			t.pendingLen = copy(t.pending[:], data)
+			return
+		}
+		r, size := utf8.DecodeRune(data)
+		if !unicode.IsSpace(r) {
+			t.invalid = true
+			return
+		}
+		data = data[size:]
+	}
+}
+
+func (t *textEndTrailing) valid() bool {
+	return !t.invalid && t.pendingLen == 0
 }
 
 func updateTextTail(tail []byte, tailLen int, fragment []byte) int {

@@ -121,6 +121,38 @@ func TestInspectSkipsLongTagValueText(t *testing.T) {
 	}
 }
 
+func TestInspectLongTagValueTextEnd(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		padding int
+		suffix  string
+		wantErr bool
+	}{
+		{name: "closing tag beyond prefix", padding: tagLinePrefixLimit + 1, suffix: " \t\u2003"},
+		{name: "closing tag split at prefix", padding: tagLinePrefixLimit - 3, suffix: " \t"},
+		{name: "unicode whitespace split at prefix", padding: tagLinePrefixLimit - len(spdxTextEnd) - 1, suffix: "\u2003"},
+		{name: "invalid suffix", padding: tagLinePrefixLimit + 1, suffix: "suffix", wantErr: true},
+		{name: "first closing tag wins", padding: tagLinePrefixLimit - 3, suffix: "suffix" + spdxTextEnd, wantErr: true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			input := "DocumentComment: <text>\n" + strings.Repeat("x", test.padding) + spdxTextEnd + test.suffix + "\nSPDXVersion: SPDX-2.3\n"
+			metadata, err := Inspect(&chunkReader{reader: strings.NewReader(input), size: 3})
+			if test.wantErr {
+				if metadata != (Metadata{}) || !errors.Is(err, ErrUnrecognized) {
+					t.Fatalf("Inspect = %+v, %v", metadata, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if metadata != (Metadata{Type: TypeSPDX, SpecVersion: "SPDX-2.3"}) {
+				t.Fatalf("Inspect = %+v", metadata)
+			}
+		})
+	}
+}
+
 func TestInspectErrors(t *testing.T) {
 	for _, input := range []string{
 		"",
